@@ -5,10 +5,10 @@
 
 # Radon集群部署
 
-这部分是讲如何部署Radon集群，默认你已经熟悉Radon单机模式的启动和部署，如不熟悉，请先参看Radon单机模式启动和部署文档。
+这部分是讲如何部署Radon集群，默认你已经熟悉Radon单机模式的启动和部署，如不熟悉，请先参看Radon单机模式启动的部署文档。
 
 ##Step1.  环境准备
-我们将Radon为部署3个节点（1主两备），2个backend节点(mysql-server)，1个backup节点(mysql-server)，需要6台主机（或者虚拟机，当然，如果仅仅只是为了测试使用，你也可以将radon和mysql-server可以部署在同一个机器，生产环境下，建议分开部署），部署架构如下所示：
+我们将Radon为部署3个节点（1主两从），2个backend节点(mysql-server)，1个backup节点(mysql-server)，需要6台主机（或者虚拟机），部署架构如下所示：
 
                             +----------------------------+     
                             |  SQL层（3个节点的radon集群）  |  
@@ -19,13 +19,17 @@
 
 
 
-Radon master节点：192.168.0.16
-Radon slave节点1:   192.168.0.17
-Radon slave节点1:   192.168.0.18
+Radon master节点: 192.168.0.16
 
-backend1节点：192.168.0.14
-backend2节点：192.168.0.28
-backup 节点   :   192.168.0.15
+Radon slave节点1: 192.168.0.17
+
+Radon slave节点1: 192.168.0.18
+
+backend1节点: 192.168.0.14
+
+backend2节点: 192.168.0.28
+
+backup节点  :   192.168.0.15
 
 默认每个机器上的mysql-server有相同的账号和密码，backend1/backend2/backup三个节点的数据库账户假设都为`root`,密码为`123456`，并且每个数据库都授权了可以通从其它IP发起访问，如未设置，请先通过mysql客户端登入到mysql-server并执行：
 ```
