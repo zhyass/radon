@@ -9,11 +9,11 @@ Contents
    * [Step2 启动radon](#step2-启动radon)
       * [2.1 radon master节点(IP: 192.168.0.16)启动:](#21-radon-master节点ip-192168016启动)
       * [2.2 radon slave1节点启动](#22-radon-slave1节点启动)
-      * [2.3 查看radon-meta目录下原数据](#23-查看radon-meta目录下原数据)
+      * [2.3 查看radon-meta目录下元数据](#23-查看radon-meta目录下元数据)
    * [Step3 通过curl执行add peer指令，构建radon集群](#step3-通过curl执行add-peer指令构建radon集群)
       * [3.1 master节点(IP: 192.168.0.16)add peer操作](#31-master节点ip-192168016add-peer操作)
       * [3.2 slave1节点(IP: 192.168.0.17)add peer操作](#32-slave1节点ip-192168017add-peer操作)
-      * [3.3 再次查看radon-meta目录下原数据](#33-再次查看radon-meta目录下原数据)
+      * [3.3 再次查看radon-meta目录下元数据](#33-再次查看radon-meta目录下元数据)
    * [Step4 给radon master节点添加backend和backup节点](#step4-给radon-master节点添加backend和backup节点)
       * [4.1 add backend1节点(IP: 192.168.0.14)](#41-add-backend1节点ip-192168014)
       * [4.2 add backend2节点(IP: 192.168.0.28)](#42-add-backend2节点ip-192168028)
@@ -60,7 +60,7 @@ mysql> GRANT ALL PRIVILEGES ON *.* TO root@"%" IDENTIFIED BY '123456'  WITH GRAN
 $ ./radon -c radon.default.json > radon.log 2>&1 &
 ```
 
-命令执行完之后，会在当前目录生成新的`bin`目录，里面包含各原数据信息
+命令执行完之后，会在当前目录生成新的`bin`目录，里面包含各元数据信息
 另外`radon.log`用于记录radon执行的日志
 如果要关闭radon进程，执行`lsof`命令，找到radon对应进程号
 ```
@@ -74,7 +74,7 @@ $ kill 35572
 启动方式同master启动.
 
 
-### 2.3 查看radon-meta目录下原数据
+### 2.3 查看radon-meta目录下元数据
 2个节点都启动之后，在radon/bin目录下用`ls`命令查看新生成的`bin` 目录中radon-meta目录下的json文件，可以看到就一个backend.json文件，此时里面backend信息是空的。这两个节点目前只是独立的节点，需要执行指令来构成关联的集群，参见Step3。
 
 ```
@@ -108,7 +108,7 @@ add slave1自身
 $ curl -i -H 'Content-Type: application/json' -X POST -d '{"address": "192.168.0.17:8080"}' http://192.168.0.17:8080/v1/peer/add
 ```
 
-### 3.3 再次查看radon-meta目录下原数据
+### 3.3 再次查看radon-meta目录下元数据
 add peer操作完成之后，在radon/bin目录下用`ls`命令查看新生成的`bin` 目录中radon-meta目录下的json文件,可以看到多了peers.json和version.json，peers.json存储集群的节点信息，version.json记录该节点的版本信息，用于节点之间判断是否同步用的。
 
 ```
