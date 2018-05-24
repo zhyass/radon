@@ -57,12 +57,15 @@ $ bin/radon -c bin/radon.default.json
     2018/04/04 15:20:17.151499 admin.go:54:      [INFO]     http.server.start[:8080]...
 ```
 radon成功启动的时候，会占用三个端口：
+
 `3308`: 外部服务端口，提供给MySQL客户端连接
-`8080`: 管理端口, 外部的 RESTFUL 接口
+
+`8080`: 管理端口, 外部的`RESTFUL`接口
+
 `6060`: 调试端口, 用于golang调试
 
 ## Step4. 添加一个backend(mysql server) 到radon
-这是一个`radon API`到管理指令, 详尽到管理指令参见文档：[radon admin API](api.md).
+这是一个`radon API`到管理指令, 详尽到管理指令参见文档：[radon admin API](../api.md).
 这里我们假设mysql已经安装到本机并且mysql服务已经启动，登入到mysql的用户名和密码都是`root`，示例如下（具体的用户名跟密码请根据自己的实际情况调整）
 
 
@@ -86,14 +89,18 @@ Content-Type: text/plain; charset=utf-8
 Radon支持mysql连接协议，连接指令：mysql -uroot   -proot. -h127.0.0.1 -P3308，其中
 
 `-uroot`: 使用账号`root`通过radon登入到mysql-server
+
 `-proot`: 登入账号对应的密码`root`
 
 ```
 $ mysql -uroot -h127.0.0.1 -P3308
 
 `root`:
+
 ```
+
 如果连接成功，则显示如下：
+
 ```
 Welcome to the MySQL monitor.  Commands end with ; or \g.
 Your MySQL connection id is 1
@@ -109,8 +116,10 @@ Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
 
 mysql> 
 ```
-现在你可以从客户端发sql, radon当前所支持的sql集详见：[Radon_SQL_surported](Radon_SQL_surported.md)
-`Example: `
+
+现在你可以从客户端发sql, radon当前所支持的sql集详见：[Radon_SQL_surported](../Radon_SQL_surported.md)
+`例如: `
+
 ```
 mysql> SHOW DATABASES;
 +--------------------+
