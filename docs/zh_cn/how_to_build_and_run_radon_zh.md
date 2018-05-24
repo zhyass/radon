@@ -1,14 +1,21 @@
 `RadonDB` 不依赖任何第三方库，很容易编译部署
 
 --------------------------------------------------------------------------------------------------
-[TOC]
+Contents
+=================
+
+* [如何编译并运行radon(单机模式)](#如何编译并运行radon单机模式)
+   * [环境要求](#环境要求)
+   * [Step1 从github下载源码](#step1-从github下载源码)
+   * [Step2 编译](#step2-编译)
+   * [Step3 运行radon](#step3-运行radon)
+   * [Step4 添加一个backend(mysql server) 到radon](#step4-添加一个backendmysql-server-到radon)
+   * [Step5 使用mysql客户端连接到radon](#step5-使用mysql客户端连接到radon)
+
 
 # 如何编译并运行radon(单机模式)
 
-@[Radon]
-
-
-## 要求
+## 环境要求
 1. [Go](http://golang.org) 支持版本1.8 以上。(如果系统没装go，请使用以下命令安装：
 
 **ubuntu系统** : sudo apt install golang
@@ -17,12 +24,12 @@
 
 2. 强烈推荐使用64位系统，以下测试均基于64位系统，32位系统未测试过。
 
-##Step1. 从github下载源码
+## Step1 从github下载源码
 ```
 $ git clone https://github.com/radondb/radon
 ```
 
-##Step2. 编译
+## Step2 编译
 
 源码下载之后，会在本地生成一个目录叫`radon`，执行以下命令：
 ```
@@ -37,7 +44,7 @@ $ ls bin/
 $ radon radoncli
 ```
 
-##Step3. 运行radon
+## Step3 运行radon
 将默认的配置文件conf/radon.default.json拷贝到bin目录下
 ```
 $ cp conf/radon.default.jsosn bin/
@@ -64,8 +71,8 @@ radon成功启动的时候，会占用三个端口：
 
 `6060`: 调试端口, 用于golang调试
 
-## Step4. 添加一个backend(mysql server) 到radon
-这是一个`radon API`到管理指令, 详尽到管理指令参见文档：[radon admin API](../api.md).
+## Step4 添加一个backend(mysql server) 到radon
+这是一个`radon API`到管理指令, 详尽到管理指令参见文档:[radon admin API](api_zh.md).
 这里我们假设mysql已经安装到本机并且mysql服务已经启动，登入到mysql的用户名和密码都是`root`，示例如下（具体的用户名跟密码请根据自己的实际情况调整）
 
 
@@ -85,7 +92,7 @@ Date: Mon, 09 Apr 2018 03:23:02 GMT
 Content-Length: 0
 Content-Type: text/plain; charset=utf-8
 ```
-## Step5. 使用mysql客户端连接到radon
+## Step5 使用mysql客户端连接到radon
 Radon支持mysql连接协议，连接指令：mysql -uroot   -proot. -h127.0.0.1 -P3308，其中
 
 `-uroot`: 使用账号`root`通过radon登入到mysql-server
@@ -99,7 +106,7 @@ $ mysql -uroot -h127.0.0.1 -P3308
 
 ```
 
-如果连接成功，则显示如下：
+如果连接成功，则显示如下:
 
 ```
 Welcome to the MySQL monitor.  Commands end with ; or \g.
@@ -117,7 +124,7 @@ Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
 mysql> 
 ```
 
-现在你可以从客户端发sql, radon当前所支持的sql集详见：[Radon_SQL_surported](../Radon_SQL_surported.md)
+现在你可以从客户端发sql, radon当前所支持的sql集详见:[Radon_SQL_surported](Radon_SQL_surported_zh.md)
 `例如: `
 
 ```

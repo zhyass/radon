@@ -1,13 +1,30 @@
 `Radon` 集群部署
 
 --------------------------------------------------------------------------------------------------
-[TOC]
+Contents
+=================
+
+* [Radon集群部署](#radon集群部署)
+   * [Step1 环境准备](#step1-环境准备)
+   * [Step2 启动radon](#step2-启动radon)
+      * [2.1 radon master节点(IP: 192.168.0.16)启动:](#21-radon-master节点ip-192168016启动)
+      * [2.2 radon slave1节点启动](#22-radon-slave1节点启动)
+      * [2.3 查看radon-meta目录下原数据](#23-查看radon-meta目录下原数据)
+   * [Step3 通过curl执行add peer指令，构建radon集群](#step3-通过curl执行add-peer指令构建radon集群)
+      * [3.1 master节点(IP: 192.168.0.16)add peer操作](#31-master节点ip-192168016add-peer操作)
+      * [3.2 slave1节点(IP: 192.168.0.17)add peer操作](#32-slave1节点ip-192168017add-peer操作)
+      * [3.3 再次查看radon-meta目录下原数据](#33-再次查看radon-meta目录下原数据)
+   * [Step4 给radon master节点添加backend和backup节点](#step4-给radon-master节点添加backend和backup节点)
+      * [4.1 add backend1节点(IP: 192.168.0.14)](#41-add-backend1节点ip-192168014)
+      * [4.2 add backend2节点(IP: 192.168.0.28)](#42-add-backend2节点ip-192168028)
+      * [4.3 add backup节点(IP: 192.168.0.15)](#43-add-backup节点ip-192168015)
+   * [Step5 通过mysql客户端连接到master](#step5-通过mysql客户端连接到master)
 
 # Radon集群部署
 
 这部分是讲如何部署Radon集群，默认你已经熟悉Radon单机模式的启动和部署，如不熟悉，请先参看[Radon单机模式启动部署文档](how_to_build_and_run_radon_zh.md)。
 
-##Step1.  环境准备
+## Step1 环境准备
 我们将Radon为部署2个节点（1主1从,当然你可以添加更多的从节点,这里只是用2个节点来展示如何部署集群)，2个backend节点(mysql-server)，1个backup节点(mysql-server)，需要5台主机（或者虚拟机），部署架构如下所示：
 
                             +----------------------------+     
@@ -34,7 +51,7 @@ backup节点  :   192.168.0.15
 mysql> GRANT ALL PRIVILEGES ON *.* TO root@"%" IDENTIFIED BY '123456'  WITH GRANT OPTION;
 ```
 
-## Step2. 启动radon
+## Step2 启动radon
 ### 2.1 radon master节点(IP: 192.168.0.16)启动:
 
 进入radon/bin目录，执行:
@@ -57,7 +74,7 @@ $ kill 35572
 启动方式同master启动.
 
 
-### 2.3. 查看radon-meta目录下原数据
+### 2.3 查看radon-meta目录下原数据
 2个节点都启动之后，在radon/bin目录下用`ls`命令查看新生成的`bin` 目录中radon-meta目录下的json文件，可以看到就一个backend.json文件，此时里面backend信息是空的。这两个节点目前只是独立的节点，需要执行指令来构成关联的集群，参见Step3。
 
 ```
@@ -66,7 +83,7 @@ backend.json
 ```
 
 
-## Step3. 通过curl执行add peer指令，构建radon集群
+## Step3 通过curl执行add peer指令，构建radon集群
 
 ### 3.1 master节点(IP: 192.168.0.16)add peer操作
 add  master自身
