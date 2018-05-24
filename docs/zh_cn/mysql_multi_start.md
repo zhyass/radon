@@ -1,6 +1,16 @@
-[TOC]
+Contents
+=================
 
-# 单机多实例启动radon
+* [单机多实例启动mysql](#单机多实例启动mysql)
+   * [Step1 去官网下载对应系统的mysql（编译好的安装包）:](#step1-去官网下载对应系统的mysql编译>好的安装包) 
+   * [Step2 在下新建目录 data_1 和 data_2 ,tmp_1和tmp_2](#step2-在下新建目录-data_1-和-data_2-tmp_1和tmp_2)
+   * [Step3 初始化数据库，在 terminal 执行如下shell （data_1和data_2都要初始化）:](#step3-初始>化数据库在-terminal-执行如下shell-data_1和data_2都要初始化) 
+   * [Step4 配置文件](#step4-配置文件) 
+   * [Step5 启动和停止](#step5-启动和停止) 
+   * [Step6 连接](#step6-连接) 
+   * [Step7 mysqld_multi 的相关参数说明：](#step7-mysqld_multi-的相关参数说明) 
+
+# 单机多实例启动mysql
 
 当前多实例启动基于OS/X和ubuntu系统测试，未在其他环境做过测试，启动方式应该是类似的。
 
