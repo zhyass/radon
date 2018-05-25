@@ -6,7 +6,7 @@ Contents
       * [1.1 源码下载](#11-源码下载) 
       * [1.2 修改源码](#12-修改源码) 
       * [1.3 编译](#13-编译) 
-   * [step2 搭建radon集群，详细的搭建教程，见<a href="radon_cluster_deployment_zh.md">radon_cluster_deployment_zh.md</a>](#step2-搭建radon集群详细的搭建教程见radon_cluster_deployment_zhmd)
+   * [step2 搭建radon集群](#step2-搭建radon集群)
    * [step3  创建database: sbtest](#step3--创建database-sbtest)
    * [step4 使用benchyou建表](#step4-使用benchyou建表)
    * [step5  开始压测](#step5--开始压测)
@@ -64,10 +64,14 @@ xstat
 xcmd
 ```
 
-## step2 搭建radon集群，详细的搭建教程，见[radon_cluster_deployment_zh.md](radon_cluster_deployment_zh.md)
+## step2 搭建radon集群
+
+详细的搭建教程，见[radon_cluster_deployment_zh.md](radon_cluster_deployment_zh.md)
 
 ## step3  创建database: sbtest
+
 benchyou在进行压测时，默认使用的数据库是sbtest，因而在radon集群搭建完毕后，通过mysql登入到radon，创建sbtest数据库
+
 ```
 mysql> CREATE DATABASE SBTEST;
 ```
@@ -77,11 +81,17 @@ mysql> CREATE DATABASE SBTEST;
 建表指令如下，相关参数说明
 
 `--mysql-host=192.168.0.16` : radon master节点
+
 `--mysql-port` : 由于我们压测的是radon，因此这里的port是radon master节点对应的port
+
 `--mysql-user=root` :  mysql登入账号
+
 `--mysql-password=123456 `: mysql登入密码
+
 `-oltp-tables-count` ： 创建表的数目
+
 `--mysql-table-engine=innod` : 指定引擎为innodb
+
 `--max-request` : 最大请求次数,比如执行insert,就表示写入1000万条数据
 
 ```
@@ -105,7 +115,12 @@ $ ./benchyou  --mysql-host=192.168.0.16 --mysql-port=3308 --mysql-user=root --my
 ### 5.1 关闭分布式事务，关闭审计功能，随机写
 
 radon master节点执行指令
- 参数说明：`twopc-enable` 是分布式事务开关，设置为 `false`， `audit-mode` 是审计功能开关，设置为`N`:
+ 参数说明：
+
+ `twopc-enable` 是分布式事务开关，设置为 `false`
+
+ `audit-mode` 是审计功能开关，设置为`N`:
+
  `allowip`是设置允许登入到radon的IP地址。
  
 ```
@@ -170,6 +185,7 @@ time          tps     wtps    rtps    rio    rio/op   wio    wio/op    rMB     r
 ### 5.4 开启分布式事务，关闭审计功能, 随机混合读写
 
 在radon master节点下，打开分布式事务开关: `twopc-enable` 设置为 `true`
+
 ```
 $ curl -i -H 'Content-Type: application/json' -X PUT -d '{"max-connections":1024, "max-result-size":1073741824, "ddl-timeout":3600, "query-timeout":600, "twopc-enable":true, "allowip": ["192.168.0.28", "192.168.0.14", "192.168.0.15"], "audit-mode": "N"}' http://192.168.0.16:8080/v1/radon/config
 ```
