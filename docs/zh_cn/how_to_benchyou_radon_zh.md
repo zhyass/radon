@@ -66,7 +66,7 @@ xcmd
 
 ## step2 搭建radon集群
 
-详细的搭建教程，见[radon_cluster_deployment_zh.md](radon_cluster_deployment_zh.md)
+详细的搭建教程，见[radon_cluster_deploy_zh.md](radon_cluster_deploy_zh.md)
 
 ## step3  创建database: sbtest
 
