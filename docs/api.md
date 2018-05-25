@@ -2,7 +2,7 @@ Contents
 =================
 
 * [API](#api)
-   * [Background](#background)
+   * [Overview](#Overview)
    * [radon](#radon)
       * [config](#config)
       * [readonly](#readonly)
@@ -47,13 +47,15 @@ Contents
 
 # API
 
-## Background
+## Overview 
 
 This document describes the RadonDB REST API, which allows users to achieve most tasks on WebUI.
 
 ## radon
 
 ### config
+
+Used to update the default configuration of radon. When the configuration is updated, radon will automatically flush to disk for persistence.
 
 ```
 Path:    /v1/radon/config
@@ -77,8 +79,7 @@ Request: {
 ```
 `Example: `
 ```
-$ curl -i -H 'Content-Type: application/json' -X PUT -d '{"max-connections":1024, "max-result-size":1073741824, "ddl-timeout":3600, "query-timeout":600, "twopc-enable":true, "allowip": ["127.0.0.1", "127.0.0.2"]}' \
-		 http://127.0.0.1:8080/v1/radon/config
+$ curl -i -H 'Content-Type: application/json' -X PUT -d '{"max-connections":1024, "max-result-size":1073741824, "ddl-timeout":3600, "query-timeout":600, "twopc-enable":true, "allowip": ["127.0.0.1", "127.0.0.2"], "audit-mode":"N"}' http://127.0.0.1:8080/v1/radon/config
 
 ---Response---
 HTTP/1.1 200 OK
@@ -314,7 +315,7 @@ Content-Length: 0
 Content-Type: text/plain; charset=utf-8
 ```
 
-## backend
+## partition configuration management
 
 ### health
 
