@@ -11,9 +11,9 @@ package planner
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/pkg/errors"
-
 	"github.com/xelabs/go-mysqlstack/sqlparser"
 	"github.com/xelabs/go-mysqlstack/xlog"
 )
@@ -119,7 +119,9 @@ func (p *AggregatePlan) analyze() error {
 		if tuple.distinct {
 			return errors.Errorf("unsupported: distinct.in.function:%+v", tuple.fn)
 		}
-		switch tuple.fn {
+
+		aggrType := strings.ToLower(tuple.fn)
+		switch aggrType {
 		case "":
 			// non-func
 			nullAggrs = append(nullAggrs, Aggregator{Field: tuple.field, Index: k, Type: AggrTypeNull})
@@ -224,7 +226,7 @@ func (p *AggregatePlan) ReWritten() sqlparser.SelectExprs {
 	return p.rewritten
 }
 
-// Empty retuns the aggregator number more than zero.
+// Empty returns the aggregator number more than zero.
 func (p *AggregatePlan) Empty() bool {
 	return (len(p.normalAggrs) == 0 && len(p.groupAggrs) == 0)
 }

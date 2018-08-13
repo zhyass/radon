@@ -10,11 +10,11 @@ package proxy
 
 import (
 	"fmt"
-	"router"
 	"strings"
 
-	"github.com/xelabs/go-mysqlstack/driver"
+	"router"
 
+	"github.com/xelabs/go-mysqlstack/driver"
 	"github.com/xelabs/go-mysqlstack/sqldb"
 	"github.com/xelabs/go-mysqlstack/sqlparser"
 	"github.com/xelabs/go-mysqlstack/sqlparser/depends/sqltypes"
@@ -30,9 +30,14 @@ var (
 // CheckCreateTable used to check the CRERATE TABLE statement.
 func CheckCreateTable(ddl *sqlparser.DDL) error {
 	shardKey := ddl.PartitionName
+	table := ddl.Table.Name.String()
 	// Check the sharding key.
 	if shardKey == "" {
 		return fmt.Errorf("create table must end with 'PARTITION BY HASH(shard-key)'")
+	}
+
+	if "dual" == table {
+		return fmt.Errorf("spanner.ddl.check.create.table[%s].error:not surpport", table)
 	}
 
 	// UNIQUE/PRIMARY constraint check.
@@ -139,7 +144,7 @@ func (spanner *Spanner) handleDDL(session *driver.Session, query string, node sq
 
 		// Check the table and change the engine.
 		if err := CheckCreateTable(ddl); err != nil {
-			log.Error("spanner.ddl.check.crete.table[%s].error:%+v", table, err)
+			log.Error("spanner.ddl.check.create.table[%s].error:%+v", table, err)
 			return nil, err
 		}
 

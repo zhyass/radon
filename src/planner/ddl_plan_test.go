@@ -9,8 +9,9 @@
 package planner
 
 import (
-	"router"
 	"testing"
+
+	"router"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/xelabs/go-mysqlstack/sqlparser"
@@ -54,6 +55,7 @@ func TestDDLPlan1(t *testing.T) {
 
 	err := route.AddForTest(database, router.MockTableAConfig())
 	assert.Nil(t, err)
+	planTree := NewPlanTree()
 	for i, query := range querys {
 		log.Debug("%v", query)
 		node, err := sqlparser.Parse(query)
@@ -64,6 +66,10 @@ func TestDDLPlan1(t *testing.T) {
 		{
 			err := plan.Build()
 			assert.Nil(t, err)
+			{
+				err := planTree.Add(plan)
+				assert.Nil(t, err)
+			}
 			want := results[i]
 			got := plan.JSON()
 			log.Info(got)

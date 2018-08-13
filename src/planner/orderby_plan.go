@@ -12,7 +12,6 @@ import (
 	"encoding/json"
 
 	"github.com/pkg/errors"
-
 	"github.com/xelabs/go-mysqlstack/sqlparser"
 	"github.com/xelabs/go-mysqlstack/xlog"
 )
@@ -57,7 +56,7 @@ func NewOrderByPlan(log *xlog.Log, node *sqlparser.Select, tuples []selectTuple)
 	}
 }
 
-// check used to check the 'order by' is at the support level.
+// analyze used to check the 'order by' is at the support level.
 // Supports:
 // 1. sqlparser.ColName: 'select a from t order by a'
 //

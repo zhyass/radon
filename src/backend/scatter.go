@@ -9,12 +9,13 @@
 package backend
 
 import (
-	"config"
 	"io/ioutil"
 	"os"
 	"path"
 	"sort"
 	"sync"
+
+	"config"
 
 	"github.com/pkg/errors"
 
@@ -48,7 +49,7 @@ func NewScatter(log *xlog.Log, metadir string) *Scatter {
 // Add backend node.
 func (scatter *Scatter) add(config *config.BackendConfig) error {
 	log := scatter.log
-	log.Warning("scatter.add:%v", config.Name)
+	log.Info("scatter.add:%v", config.Name)
 
 	if _, ok := scatter.backends[config.Name]; ok {
 		return errors.Errorf("scatter.backend[%v].duplicate", config.Name)
@@ -190,7 +191,7 @@ func (scatter *Scatter) LoadConfig() error {
 	scatter.mu.Lock()
 	defer scatter.mu.Unlock()
 
-	// Do cleay first.
+	// Do clear first.
 	scatter.clear()
 
 	log := scatter.log
@@ -221,7 +222,7 @@ func (scatter *Scatter) LoadConfig() error {
 			log.Error("scatter.add.backend[%+v].error:%v", backend.Name, err)
 			return err
 		}
-		log.Warning("scatter.load.backend:%+v", backend.Name)
+		log.Info("scatter.load.backend:%+v", backend.Name)
 	}
 
 	// Add backup node.

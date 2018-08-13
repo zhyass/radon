@@ -10,11 +10,11 @@ package planner
 
 import (
 	"encoding/json"
+
 	"router"
 	"xcontext"
 
 	"github.com/pkg/errors"
-
 	"github.com/xelabs/go-mysqlstack/sqlparser"
 	"github.com/xelabs/go-mysqlstack/sqlparser/depends/hack"
 	"github.com/xelabs/go-mysqlstack/xlog"
@@ -31,7 +31,7 @@ type DeletePlan struct {
 	// router
 	router *router.Router
 
-	// insert ast
+	// delete ast
 	node *sqlparser.Delete
 
 	// database
