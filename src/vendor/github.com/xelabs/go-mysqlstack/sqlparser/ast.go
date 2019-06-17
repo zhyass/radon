@@ -1495,6 +1495,11 @@ func (node *Where) WalkSubtree(visit Visit) error {
 // Expr represents an expression.
 type Expr interface {
 	iExpr()
+	// replace replaces any subexpression that matches
+	// from with to. The implementation can use the
+	// replaceExprs convenience function.
+	replace(from, to Expr) bool
+	ResultType() ResultType
 	SQLNode
 }
 
@@ -1526,6 +1531,35 @@ func (*MatchExpr) iExpr()        {}
 func (*GroupConcatExpr) iExpr()  {}
 func (*Default) iExpr()          {}
 
+// ReplaceExpr finds the from expression from root
+// and replaces it with to. If from matches root,
+// then to is returned.
+func ReplaceExpr(root, from, to Expr) Expr {
+	if root == from {
+		return to
+	}
+	root.replace(from, to)
+	return root
+}
+
+// replaceExprs is a convenience function used by implementors
+// of the replace method.
+func replaceExprs(from, to Expr, exprs ...*Expr) bool {
+	for _, expr := range exprs {
+		if *expr == nil {
+			continue
+		}
+		if *expr == from {
+			*expr = to
+			return true
+		}
+		if (*expr).replace(from, to) {
+			return true
+		}
+	}
+	return false
+}
+
 // Exprs represents a list of value expressions.
 // It's not a valid expression because it's not parenthesized.
 type Exprs []Expr
@@ -1549,6 +1583,16 @@ func (node Exprs) WalkSubtree(visit Visit) error {
 	return nil
 }
 
+type ResultType int
+
+const (
+	StringResult ResultType = iota
+	IntResult
+	DecimalResult
+	RealResult
+	RowResult
+)
+
 // AndExpr represents an AND expression.
 type AndExpr struct {
 	Left, Right Expr
@@ -1569,6 +1613,14 @@ func (node *AndExpr) WalkSubtree(visit Visit) error {
 		node.Left,
 		node.Right,
 	)
+}
+
+func (node *AndExpr) replace(from, to Expr) bool {
+	return replaceExprs(from, to, &node.Left, &node.Right)
+}
+
+func (node *AndExpr) ResultType() ResultType {
+	return IntResult
 }
 
 // OrExpr represents an OR expression.
@@ -1593,6 +1645,14 @@ func (node *OrExpr) WalkSubtree(visit Visit) error {
 	)
 }
 
+func (node *OrExpr) replace(from, to Expr) bool {
+	return replaceExprs(from, to, &node.Left, &node.Right)
+}
+
+func (node *OrExpr) ResultType() ResultType {
+	return IntResult
+}
+
 // NotExpr represents a NOT expression.
 type NotExpr struct {
 	Expr Expr
@@ -1614,6 +1674,14 @@ func (node *NotExpr) WalkSubtree(visit Visit) error {
 	)
 }
 
+func (node *NotExpr) replace(from, to Expr) bool {
+	return replaceExprs(from, to, &node.Expr)
+}
+
+func (node *NotExpr) ResultType() ResultType {
+	return IntResult
+}
+
 // ParenExpr represents a parenthesized boolean expression.
 type ParenExpr struct {
 	Expr Expr
@@ -1633,6 +1701,14 @@ func (node *ParenExpr) WalkSubtree(visit Visit) error {
 		visit,
 		node.Expr,
 	)
+}
+
+func (node *ParenExpr) replace(from, to Expr) bool {
+	return replaceExprs(from, to, &node.Expr)
+}
+
+func (node *ParenExpr) ResultType() ResultType {
+	return node.Expr.ResultType()
 }
 
 // ComparisonExpr represents a two-value comparison expression.
@@ -1682,6 +1758,14 @@ func (node *ComparisonExpr) WalkSubtree(visit Visit) error {
 	)
 }
 
+func (node *ComparisonExpr) replace(from, to Expr) bool {
+	return replaceExprs(from, to, &node.Left, &node.Right, &node.Escape)
+}
+
+func (node *ComparisonExpr) ResultType() ResultType {
+	return IntResult
+}
+
 // RangeCond represents a BETWEEN or a NOT BETWEEN expression.
 type RangeCond struct {
 	Operator string
@@ -1711,6 +1795,14 @@ func (node *RangeCond) WalkSubtree(visit Visit) error {
 		node.From,
 		node.To,
 	)
+}
+
+func (node *RangeCond) replace(from, to Expr) bool {
+	return replaceExprs(from, to, &node.Left, &node.From, &node.To)
+}
+
+func (node *RangeCond) ResultType() ResultType {
+	return IntResult
 }
 
 // IsExpr represents an IS ... or an IS NOT ... expression.
@@ -1745,6 +1837,14 @@ func (node *IsExpr) WalkSubtree(visit Visit) error {
 	)
 }
 
+func (node *IsExpr) replace(from, to Expr) bool {
+	return replaceExprs(from, to, &node.Expr)
+}
+
+func (node *IsExpr) ResultType() ResultType {
+	return IntResult
+}
+
 // ExistsExpr represents an EXISTS expression.
 type ExistsExpr struct {
 	Subquery *Subquery
@@ -1764,6 +1864,14 @@ func (node *ExistsExpr) WalkSubtree(visit Visit) error {
 		visit,
 		node.Subquery,
 	)
+}
+
+func (node *ExistsExpr) replace(from, to Expr) bool {
+	return false
+}
+
+func (node *ExistsExpr) ResultType() ResultType {
+	return IntResult
 }
 
 // ValType specifies the type for SQLVal.
@@ -1840,6 +1948,22 @@ func (node *SQLVal) WalkSubtree(visit Visit) error {
 	return nil
 }
 
+func (node *SQLVal) replace(from, to Expr) bool {
+	return false
+}
+
+func (node *SQLVal) ResultType() ResultType {
+	switch node.Type {
+	case IntVal, HexNum, HexVal:
+		return IntResult
+	case StrVal:
+		return StringResult
+	case FloatVal:
+		return RealResult
+	}
+	panic("unsupported sql value")
+}
+
 // HexDecode decodes the hexval into bytes.
 func (node *SQLVal) HexDecode() ([]byte, error) {
 	dst := make([]byte, hex.DecodedLen(len([]byte(node.Val))))
@@ -1863,6 +1987,14 @@ func (node *NullVal) WalkSubtree(visit Visit) error {
 	return nil
 }
 
+func (node *NullVal) replace(from, to Expr) bool {
+	return false
+}
+
+func (node *NullVal) ResultType() ResultType {
+	return StringResult
+}
+
 // BoolVal is true or false.
 type BoolVal bool
 
@@ -1878,6 +2010,14 @@ func (node BoolVal) Format(buf *TrackedBuffer) {
 // WalkSubtree walks the nodes of the subtree.
 func (node BoolVal) WalkSubtree(visit Visit) error {
 	return nil
+}
+
+func (node BoolVal) replace(from, to Expr) bool {
+	return false
+}
+
+func (node BoolVal) ResultType() ResultType {
+	return IntResult
 }
 
 // ColName represents a column name.
@@ -1909,6 +2049,32 @@ func (node *ColName) WalkSubtree(visit Visit) error {
 		node.Name,
 		node.Qualifier,
 	)
+}
+
+func (node *ColName) replace(from, to Expr) bool {
+	return false
+}
+
+func (node *ColName) ResultType() ResultType {
+	if node.Metadata == nil {
+		return StringResult
+	}
+	typ := node.Metadata.(Column).Val.Type()
+	if sqltypes.IsIntegral(typ) {
+		return IntResult
+	}
+	if sqltypes.IsFloat(typ) {
+		return RealResult
+	}
+	if typ == sqltypes.Decimal {
+		return DecimalResult
+	}
+	return StringResult
+}
+
+type Column struct {
+	Index int
+	Val   sqltypes.Value
 }
 
 // Equal returns true if the column names match.
@@ -1944,6 +2110,19 @@ func (node ValTuple) WalkSubtree(visit Visit) error {
 	return Walk(visit, Exprs(node))
 }
 
+func (node ValTuple) replace(from, to Expr) bool {
+	for i := range node {
+		if replaceExprs(from, to, &node[i]) {
+			return true
+		}
+	}
+	return false
+}
+
+func (node ValTuple) ResultType() ResultType {
+	return node[0].ResultType()
+}
+
 // Subquery represents a subquery.
 type Subquery struct {
 	Select SelectStatement
@@ -1965,6 +2144,14 @@ func (node *Subquery) WalkSubtree(visit Visit) error {
 	)
 }
 
+func (node *Subquery) replace(from, to Expr) bool {
+	return false
+}
+
+func (node *Subquery) ResultType() ResultType {
+	panic("unreachable")
+}
+
 // ListArg represents a named list argument.
 type ListArg []byte
 
@@ -1976,6 +2163,14 @@ func (node ListArg) Format(buf *TrackedBuffer) {
 // WalkSubtree walks the nodes of the subtree.
 func (node ListArg) WalkSubtree(visit Visit) error {
 	return nil
+}
+
+func (node ListArg) replace(from, to Expr) bool {
+	return false
+}
+
+func (node ListArg) ResultType() ResultType {
+	panic("unreachable")
 }
 
 // BinaryExpr represents a binary value expression.
@@ -2016,6 +2211,33 @@ func (node *BinaryExpr) WalkSubtree(visit Visit) error {
 	)
 }
 
+func (node *BinaryExpr) replace(from, to Expr) bool {
+	return replaceExprs(from, to, &node.Left, &node.Right)
+}
+
+func (node *BinaryExpr) ResultType() ResultType {
+	var typ ResultType
+	switch node.Operator {
+	case ShiftLeftStr, ShiftRightStr, BitAndStr, BitOrStr, BitXorStr:
+		typ = IntResult
+	case PlusStr, MinusStr, MultStr, IntDivStr, DivStr, ModStr:
+		lr := node.Left.ResultType()
+		rr := node.Right.ResultType()
+		if lr == RealResult || rr == RealResult {
+			typ = RealResult
+		} else if lr == DecimalResult || rr == DecimalResult {
+			typ = DecimalResult
+		} else {
+			if node.Operator == DivStr {
+				typ = DecimalResult
+			} else {
+				typ = IntResult
+			}
+		}
+	}
+	return typ
+}
+
 // UnaryExpr represents a unary value expression.
 type UnaryExpr struct {
 	Operator string
@@ -2051,6 +2273,14 @@ func (node *UnaryExpr) WalkSubtree(visit Visit) error {
 	)
 }
 
+func (node *UnaryExpr) replace(from, to Expr) bool {
+	return replaceExprs(from, to, &node.Expr)
+}
+
+func (node *UnaryExpr) ResultType() ResultType {
+	return node.Expr.ResultType()
+}
+
 // IntervalExpr represents a date-time INTERVAL expression.
 type IntervalExpr struct {
 	Expr Expr
@@ -2074,6 +2304,14 @@ func (node *IntervalExpr) WalkSubtree(visit Visit) error {
 	)
 }
 
+func (node *IntervalExpr) replace(from, to Expr) bool {
+	return replaceExprs(from, to, &node.Expr)
+}
+
+func (node *IntervalExpr) ResultType() ResultType {
+	panic("unreachable")
+}
+
 // CollateExpr represents dynamic collate operator.
 type CollateExpr struct {
 	Expr    Expr
@@ -2094,6 +2332,14 @@ func (node *CollateExpr) WalkSubtree(visit Visit) error {
 		visit,
 		node.Expr,
 	)
+}
+
+func (node *CollateExpr) replace(from, to Expr) bool {
+	return replaceExprs(from, to, &node.Expr)
+}
+
+func (node *CollateExpr) ResultType() ResultType {
+	return node.Expr.ResultType()
 }
 
 // FuncExpr represents a function call.
@@ -2130,6 +2376,24 @@ func (node *FuncExpr) WalkSubtree(visit Visit) error {
 		node.Name,
 		node.Exprs,
 	)
+}
+
+func (node *FuncExpr) replace(from, to Expr) bool {
+	for _, sel := range node.Exprs {
+		aliased, ok := sel.(*AliasedExpr)
+		if !ok {
+			continue
+		}
+		if replaceExprs(from, to, &aliased.Expr) {
+			return true
+		}
+	}
+	return false
+}
+
+func (node *FuncExpr) ResultType() ResultType {
+	// TODO.
+	panic("Temporarily unreachable.")
 }
 
 // Aggregates is a map of all aggregate functions.
@@ -2182,6 +2446,28 @@ func (node *GroupConcatExpr) WalkSubtree(visit Visit) error {
 	)
 }
 
+func (node *GroupConcatExpr) replace(from, to Expr) bool {
+	for _, sel := range node.Exprs {
+		aliased, ok := sel.(*AliasedExpr)
+		if !ok {
+			continue
+		}
+		if replaceExprs(from, to, &aliased.Expr) {
+			return true
+		}
+	}
+	for _, order := range node.OrderBy {
+		if replaceExprs(from, to, &order.Expr) {
+			return true
+		}
+	}
+	return false
+}
+
+func (node *GroupConcatExpr) ResultType() ResultType {
+	return StringResult
+}
+
 // ValuesFuncExpr represents a function call.
 type ValuesFuncExpr struct {
 	Name     ColIdent
@@ -2212,6 +2498,14 @@ func (node *ValuesFuncExpr) WalkSubtree(visit Visit) error {
 	)
 }
 
+func (node *ValuesFuncExpr) replace(from, to Expr) bool {
+	return false
+}
+
+func (node *ValuesFuncExpr) ResultType() ResultType {
+	return StringResult
+}
+
 // ConvertExpr represents a call to CONVERT(expr, type)
 // or it's equivalent CAST(expr AS type). Both are rewritten to the former.
 type ConvertExpr struct {
@@ -2236,6 +2530,23 @@ func (node *ConvertExpr) WalkSubtree(visit Visit) error {
 	)
 }
 
+func (node *ConvertExpr) replace(from, to Expr) bool {
+	return replaceExprs(from, to, &node.Expr)
+}
+
+func (node *ConvertExpr) ResultType() ResultType {
+	var typ ResultType
+	switch strings.ToLower(node.Type.Type) {
+	case "char", "nchar", "json", "data", "datatime", "time", "binary":
+		typ = StringResult
+	case "decimal":
+		typ = DecimalResult
+	case "signed", "unsigned":
+		typ = IntResult
+	}
+	return typ
+}
+
 // ConvertUsingExpr represents a call to CONVERT(expr USING charset).
 type ConvertUsingExpr struct {
 	Expr Expr
@@ -2256,6 +2567,14 @@ func (node *ConvertUsingExpr) WalkSubtree(visit Visit) error {
 		visit,
 		node.Expr,
 	)
+}
+
+func (node *ConvertUsingExpr) replace(from, to Expr) bool {
+	return replaceExprs(from, to, &node.Expr)
+}
+
+func (node *ConvertUsingExpr) ResultType() ResultType {
+	return node.Expr.ResultType()
 }
 
 // ConvertType represents the type in call to CONVERT(expr, type)
@@ -2324,6 +2643,23 @@ func (node *MatchExpr) WalkSubtree(visit Visit) error {
 	)
 }
 
+func (node *MatchExpr) replace(from, to Expr) bool {
+	for _, sel := range node.Columns {
+		aliased, ok := sel.(*AliasedExpr)
+		if !ok {
+			continue
+		}
+		if replaceExprs(from, to, &aliased.Expr) {
+			return true
+		}
+	}
+	return replaceExprs(from, to, &node.Expr)
+}
+
+func (node *MatchExpr) ResultType() ResultType {
+	return IntResult
+}
+
 // CaseExpr represents a CASE expression.
 type CaseExpr struct {
 	Expr  Expr
@@ -2362,6 +2698,19 @@ func (node *CaseExpr) WalkSubtree(visit Visit) error {
 	return Walk(visit, node.Else)
 }
 
+func (node *CaseExpr) replace(from, to Expr) bool {
+	for _, when := range node.Whens {
+		if replaceExprs(from, to, &when.Cond, &when.Val) {
+			return true
+		}
+	}
+	return replaceExprs(from, to, &node.Expr, &node.Else)
+}
+
+func (node *CaseExpr) ResultType() ResultType {
+	return IntResult
+}
+
 // Default represents a DEFAULT expression.
 type Default struct {
 	ColName string
@@ -2378,6 +2727,14 @@ func (node *Default) Format(buf *TrackedBuffer) {
 // WalkSubtree walks the nodes of the subtree.
 func (node *Default) WalkSubtree(visit Visit) error {
 	return nil
+}
+
+func (node *Default) replace(from, to Expr) bool {
+	return false
+}
+
+func (node *Default) ResultType() ResultType {
+	return StringResult
 }
 
 // When represents a WHEN sub-expression.
