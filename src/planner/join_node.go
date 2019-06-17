@@ -227,11 +227,11 @@ func (j *JoinNode) setNoTableFilter(exprs []sqlparser.Expr) {
 // based on the plan tree,separate the otherjoinon.
 type otherJoin struct {
 	// noTables: no tables filter in otherjoinon.
-	// others: filter cross the left and right.
 	noTables []sqlparser.Expr
 	// filter belong to the left node.
 	left []selectTuple
 	// filter belong to the right node.
+	// others: filter cross the left and right.
 	right, others []filterTuple
 }
 
@@ -631,7 +631,56 @@ func (j *JoinNode) pushOtherFilters(filters []filterTuple, idx *int, isOtherJoin
 			filter.expr.Format(buf)
 			return errors.Errorf("unsupported: clause.'%s'.in.cross-shard.join", buf.String())
 		}
+
+		err = sqlparser.Walk(func(node sqlparser.SQLNode) (kontinue bool, err error) {
+			switch node := node.(type) {
+			case *sqlparser.ColName:
+				err := j.pushColName(node)
+				if err != nil {
+					return false, err
+				}
+			}
+			return true, nil
+		}, filter.expr)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
+}
+
+func (j *JoinNode) pushColName(col *sqlparser.ColName) error {
+	var err error
+	index := -1
+	table := col.Qualifier.Name.String()
+	field := col.Name.String()
+	node := j.referredTables[table].parent
+	tuples := node.getFields()
+	for i, tuple := range tuples {
+		if tuple.isCol {
+			if table == tuple.referTables[0] && field == tuple.field {
+				index = i
+				break
+			}
+		}
+	}
+
+	// key not in the select fields.
+	if index == -1 {
+		aliasExpr := &sqlparser.AliasedExpr{Expr: col}
+		tuple := selectTuple{
+			expr:        aliasExpr,
+			field:       field,
+			referTables: []string{table},
+			isCol:       true,
+		}
+		index, err = node.pushSelectExpr(tuple)
+		if err != nil {
+			return err
+		}
+	}
+
+	col.Metadata = &sqlparser.Column{Index: index}
 	return nil
 }
 
@@ -656,7 +705,9 @@ func (j *JoinNode) pushOtherFilter(expr sqlparser.Expr, node PlanNode, tbs []str
 	// key not in the select fields.
 	if index == -1 {
 		aliasExpr := &sqlparser.AliasedExpr{Expr: expr}
+		isCol := true
 		if field == "" {
+			isCol = false
 			buf := sqlparser.NewTrackedBuffer(nil)
 			expr.Format(buf)
 			field = buf.String()
@@ -672,6 +723,7 @@ func (j *JoinNode) pushOtherFilter(expr sqlparser.Expr, node PlanNode, tbs []str
 			field:       field,
 			alias:       alias,
 			referTables: tbs,
+			isCol:       isCol,
 		}
 		index, err = node.pushSelectExpr(tuple)
 		if err != nil {

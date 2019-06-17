@@ -100,6 +100,8 @@ func (aggr *Aggregation) FixField(field *querypb.Field) {
 					decimals = 31
 				}
 				field.Type = querypb.Type_FLOAT64
+			} else if sqltypes.IsTemporal(field.Type) {
+				field.Type = sqltypes.Decimal
 			} else {
 				decimals = 31
 				field.Type = querypb.Type_FLOAT64
@@ -119,6 +121,8 @@ func (aggr *Aggregation) FixField(field *querypb.Field) {
 					field.ColumnLength = 23
 				}
 				field.Type = querypb.Type_FLOAT64
+			} else if sqltypes.IsTemporal(field.Type) {
+				field.Type = sqltypes.Decimal
 			} else {
 				field.Decimals = 31
 				field.ColumnLength = 23

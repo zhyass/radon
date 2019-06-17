@@ -179,9 +179,9 @@ func TestAdd(t *testing.T) {
 		err: "strconv.ParseInt: parsing \"1.2\": invalid syntax",
 	}, {
 		// Make sure underlying error is returned while adding.
-		v1:  NewInt64(-1),
-		v2:  NewUint64(2),
-		err: "cannot add a negative number to an unsigned integer: 2, -1",
+		v1:  NewInt64(-2),
+		v2:  NewUint64(1),
+		err: "BIGINT.UNSIGNED.value.is.out.of.range.in: 1, -2",
 	}, {
 		// Make sure underlying error is returned while converting.
 		v1:  NewFloat64(1),
@@ -487,21 +487,21 @@ func TestAddNumeric(t *testing.T) {
 		// Int64 overflow.
 		v1:  numeric{typ: Int64, ival: 9223372036854775807},
 		v2:  numeric{typ: Int64, ival: 2},
-		out: numeric{typ: Float64, fval: 9223372036854775809},
+		err: fmt.Errorf("BIGINT.value.is.out.of.range.in: 9223372036854775807, 2"),
 	}, {
 		// Int64 underflow.
 		v1:  numeric{typ: Int64, ival: -9223372036854775807},
 		v2:  numeric{typ: Int64, ival: -2},
-		out: numeric{typ: Float64, fval: -9223372036854775809},
+		err: fmt.Errorf("BIGINT.value.is.out.of.range.in: -9223372036854775807, -2"),
 	}, {
 		v1:  numeric{typ: Int64, ival: -1},
 		v2:  numeric{typ: Uint64, uval: 2},
-		err: fmt.Errorf("cannot add a negative number to an unsigned integer: 2, -1"),
+		out: numeric{typ: Uint64, uval: 1},
 	}, {
 		// Uint64 overflow.
 		v1:  numeric{typ: Uint64, uval: 18446744073709551615},
 		v2:  numeric{typ: Uint64, uval: 2},
-		out: numeric{typ: Float64, fval: 18446744073709551617},
+		err: fmt.Errorf("BIGINT.UNSIGNED.value.is.out.of.range.in: 18446744073709551615, 2"),
 	}}
 	for _, tcase := range tcases {
 		got, err := addNumeric(tcase.v1, tcase.v2)
