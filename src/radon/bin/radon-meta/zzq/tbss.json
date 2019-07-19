@@ -1,0 +1,24 @@
+{
+	"name": "tbss",
+	"slots-readonly": 0,
+	"blocks-readonly": 0,
+	"shardtype": "GLOBAL",
+	"shardkey": "",
+	"partitions": [
+		{
+			"table": "tbss",
+			"segment": "",
+			"backend": "backend1"
+		},
+		{
+			"table": "tbss",
+			"segment": "",
+			"backend": "backend2"
+		},
+		{
+			"table": "tbss",
+			"segment": "",
+			"backend": "backend3"
+		}
+	]
+}

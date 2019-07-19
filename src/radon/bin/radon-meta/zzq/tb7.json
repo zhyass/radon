@@ -1,0 +1,24 @@
+{
+	"name": "tb7",
+	"slots-readonly": 0,
+	"blocks-readonly": 0,
+	"shardtype": "GLOBAL",
+	"shardkey": "",
+	"partitions": [
+		{
+			"table": "tb7",
+			"segment": "",
+			"backend": "backend1"
+		},
+		{
+			"table": "tb7",
+			"segment": "",
+			"backend": "backend2"
+		},
+		{
+			"table": "tb7",
+			"segment": "",
+			"backend": "backend3"
+		}
+	]
+}

@@ -1,0 +1,14 @@
+{
+	"name": "t3",
+	"slots-readonly": 0,
+	"blocks-readonly": 0,
+	"shardtype": "SINGLE",
+	"shardkey": "",
+	"partitions": [
+		{
+			"table": "t3",
+			"segment": "",
+			"backend": "backend1"
+		}
+	]
+}

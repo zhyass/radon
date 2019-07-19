@@ -1,0 +1,24 @@
+{
+	"name": "tst",
+	"slots-readonly": 0,
+	"blocks-readonly": 0,
+	"shardtype": "GLOBAL",
+	"shardkey": "",
+	"partitions": [
+		{
+			"table": "tst",
+			"segment": "",
+			"backend": "backend1"
+		},
+		{
+			"table": "tst",
+			"segment": "",
+			"backend": "backend2"
+		},
+		{
+			"table": "tst",
+			"segment": "",
+			"backend": "backend3"
+		}
+	]
+}

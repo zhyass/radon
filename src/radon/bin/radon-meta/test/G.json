@@ -1,0 +1,24 @@
+{
+	"name": "G",
+	"slots-readonly": 0,
+	"blocks-readonly": 0,
+	"shardtype": "GLOBAL",
+	"shardkey": "",
+	"partitions": [
+		{
+			"table": "G",
+			"segment": "",
+			"backend": "backend1"
+		},
+		{
+			"table": "G",
+			"segment": "",
+			"backend": "backend2"
+		},
+		{
+			"table": "G",
+			"segment": "",
+			"backend": "backend3"
+		}
+	]
+}

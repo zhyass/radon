@@ -55,6 +55,118 @@ func NullsafeAdd(v1, v2 Value, resultType querypb.Type, prec int) (Value, error)
 	return castFromNumeric(lresult, resultType, prec)
 }
 
+func NullsafeMinus(v1, v2 Value, resultType querypb.Type, prec int) (Value, error) {
+	if v1.IsNull() {
+		return v2, nil
+	}
+	if v2.IsNull() {
+		return v1, nil
+	}
+
+	lv1, err := newNumeric(v1)
+	if err != nil {
+		return NULL, err
+	}
+	lv2, err := newNumeric(v2)
+	if err != nil {
+		return NULL, err
+	}
+
+	res := numeric{}
+	switch lv2.typ {
+	case Uint64:
+		switch lv1.typ {
+		case Int64:
+			if lv1.ival < 0 || uint64(lv1.ival) < lv2.uval {
+				return NULL, fmt.Errorf("unsigned.value.is.out.of.range: %d, %d", lv1.ival, lv2.uval)
+			}
+			res = numeric{typ: Uint64, uval: uint64(lv1.ival) - lv2.uval}
+		case Uint64:
+			if lv1.uval < lv2.uval {
+				return NULL, fmt.Errorf("unsigned.value.is.out.of.range: %d, %d", lv1.uval, lv2.uval)
+			}
+			res = numeric{typ: Uint64, uval: lv1.uval - lv2.uval}
+		case Float64:
+			res = numeric{typ: Float64, fval: lv1.fval - float64(lv2.uval)}
+		}
+	case Int64:
+		lv2.ival = -lv2.ival
+		res, err = addNumeric(lv1, lv2)
+		if err != nil {
+			return NULL, err
+		}
+	case Float64:
+		lv2.fval = -lv2.fval
+		res, err = addNumeric(lv1, lv2)
+		if err != nil {
+			return NULL, err
+		}
+	}
+
+	return castFromNumeric(res, resultType, prec)
+}
+
+func NullsafeMulti(v1, v2 Value, resultType querypb.Type, prec int) (Value, error) {
+	if v1.IsNull() {
+		return v2, nil
+	}
+	if v2.IsNull() {
+		return v1, nil
+	}
+
+	lv1, err := newNumeric(v1)
+	if err != nil {
+		return NULL, err
+	}
+	lv2, err := newNumeric(v2)
+	if err != nil {
+		return NULL, err
+	}
+	//st:= strconv.FormatFloat(xx,'f',-1,64)
+	res := numeric{}
+	lv1, lv2 = prioritize(lv1, lv2)
+	switch lv1.typ {
+	case Int64:
+		result := lv1.ival * lv2.ival
+		if lv1.ival != 0 && result/lv1.ival != lv2.ival {
+			return NULL, fmt.Errorf("BIGINT.value.is.out.of.range.in: %d, %d", v1, v2)
+		}
+		res = numeric{typ: Int64, ival: result}
+	case Uint64:
+		switch lv2.typ {
+		case Int64:
+			if lv2.ival < 0 {
+				return NULL, fmt.Errorf("unsigned.value.is.out.of.range: %d, %d", lv1.ival, lv2.uval)
+			}
+			result := lv1.uval * uint64(lv2.ival)
+			if lv1.uval != 0 && result/lv1.uval != uint64(lv2.ival) {
+				return NULL, fmt.Errorf("BIGINT.value.is.out.of.range.in: %d, %d", v1, v2)
+			}
+			res = numeric{typ: Uint64, uval: result}
+		case Uint64:
+			result := lv1.uval * lv2.uval
+			if lv1.uval != 0 && result/lv1.uval != lv2.uval {
+				return NULL, fmt.Errorf("BIGINT.value.is.out.of.range.in: %d, %d", v1, v2)
+			}
+			res = numeric{typ: Uint64, uval: result}
+		}
+	case Float64:
+		switch lv2.typ {
+		case Int64:
+			lv2.fval = float64(lv2.ival)
+		case Uint64:
+			lv2.fval = float64(lv2.uval)
+		}
+		result := lv1.fval * lv2.fval
+		if st := strconv.FormatFloat(result, 'f', -1, 64); st == "+Inf" {
+			return NULL, fmt.Errorf("BIGINT.value.is.out.of.range.in: %d, %d", v1, v2)
+		}
+		res = numeric{typ: Float64, fval: result}
+	}
+
+	return castFromNumeric(res, resultType, prec)
+}
+
 // NullsafeDiv used to divide two Values in a null-safe manner.
 func NullsafeDiv(v1, v2 Value, resultType querypb.Type, prec int) (Value, error) {
 	if v1.IsNull() || v2.IsNull() {
@@ -166,6 +278,8 @@ func newNumeric(v Value) (numeric, error) {
 			return numeric{}, err
 		}
 		return numeric{fval: fval, typ: Float64}, nil
+	case v.IsTemporal():
+		return TimeToNumeric(v)
 	}
 
 	// For other types, do best effort.
@@ -178,7 +292,7 @@ func newNumeric(v Value) (numeric, error) {
 	return numeric{ival: 0, typ: Int64}, nil
 }
 
-// newNumeric parses a value and produces an Int64, Uint64 or Float64.
+// newNumericFloat parses a value and produces an Float64.
 func newNumericFloat(v Value) (numeric, error) {
 	str := v.String()
 	var fval float64
@@ -201,6 +315,19 @@ func newNumericFloat(v Value) (numeric, error) {
 			return numeric{}, err
 		}
 		fval = val
+	case v.IsTemporal():
+		num, err := TimeToNumeric(v)
+		if err != nil {
+			return numeric{}, err
+		}
+		switch num.typ {
+		case Uint64:
+			fval = float64(num.uval)
+		case Int64:
+			fval = float64(num.ival)
+		case Float64:
+			fval = num.fval
+		}
 	default:
 		// For other types, do best effort.
 		if ival, err := strconv.ParseInt(str, 10, 64); err == nil {
@@ -215,34 +342,67 @@ func newNumericFloat(v Value) (numeric, error) {
 	return numeric{fval: fval, typ: Float64}, nil
 }
 
+// newNumericUint parses a value and produces an Uint64.
+func newNumericUint(v Value) (numeric, error) {
+	str := v.String()
+	var uval uint64
+	switch {
+	case v.IsSigned():
+		val, err := strconv.ParseInt(str, 10, 64)
+		if err != nil {
+			return numeric{}, err
+		}
+		uval = uint64(val)
+	case v.IsUnsigned():
+		val, err := strconv.ParseUint(str, 10, 64)
+		if err != nil {
+			return numeric{}, err
+		}
+		uval = val
+	case v.IsFloat():
+		val, err := strconv.ParseFloat(str, 64)
+		if err != nil {
+			return numeric{}, err
+		}
+		uval = uint64(val)
+	case v.IsTemporal():
+		num, err := TimeToNumeric(v)
+		if err != nil {
+			return numeric{}, err
+		}
+		switch num.typ {
+		case Uint64:
+			uval = num.uval
+		case Int64:
+			uval = uint64(num.ival)
+		case Float64:
+			uval = uint64(num.fval)
+		}
+	default:
+		// For other types, do best effort.
+		if ival, err := strconv.ParseInt(str, 10, 64); err == nil {
+			uval = uint64(ival)
+		} else {
+			if val, err := strconv.ParseFloat(str, 64); err == nil {
+				uval = uint64(val)
+			}
+		}
+	}
+
+	return numeric{uval: uval, typ: Uint64}, nil
+}
+
 func addNumeric(v1, v2 numeric) (numeric, error) {
 	v1, v2 = prioritize(v1, v2)
 	switch v1.typ {
 	case Int64:
-		return intPlusInt(v1.ival, v2.ival), nil
+		return intPlusInt(v1.ival, v2.ival)
 	case Uint64:
 		switch v2.typ {
 		case Int64:
 			return uintPlusInt(v1.uval, v2.ival)
 		case Uint64:
-			return uintPlusUint(v1.uval, v2.uval), nil
-		}
-	case Float64:
-		return floatPlusAny(v1.fval, v2), nil
-	}
-	panic("unreachable")
-}
-
-func divNumeric(v1, v2 numeric) (numeric, error) {
-	switch v1.typ {
-	case Int64:
-		return intPlusInt(v1.ival, v2.ival), nil
-	case Uint64:
-		switch v2.typ {
-		case Int64:
-			return uintPlusInt(v1.uval, v2.ival)
-		case Uint64:
-			return uintPlusUint(v1.uval, v2.uval), nil
+			return uintPlusUint(v1.uval, v2.uval)
 		}
 	case Float64:
 		return floatPlusAny(v1.fval, v2), nil
@@ -266,33 +426,36 @@ func prioritize(v1, v2 numeric) (altv1, altv2 numeric) {
 	return v1, v2
 }
 
-func intPlusInt(v1, v2 int64) numeric {
+func intPlusInt(v1, v2 int64) (numeric, error) {
 	result := v1 + v2
-	if v1 > 0 && v2 > 0 && result < 0 {
+	if v1 > 0 && v2 > 0 && result <= 0 {
 		goto overflow
 	}
-	if v1 < 0 && v2 < 0 && result > 0 {
+	if v1 < 0 && v2 < 0 && result >= 0 {
 		goto overflow
 	}
-	return numeric{typ: Int64, ival: result}
+	return numeric{typ: Int64, ival: result}, nil
 
 overflow:
-	return numeric{typ: Float64, fval: float64(v1) + float64(v2)}
+	return numeric{}, fmt.Errorf("BIGINT.value.is.out.of.range.in: %d, %d", v1, v2)
 }
 
 func uintPlusInt(v1 uint64, v2 int64) (numeric, error) {
 	if v2 < 0 {
-		return numeric{}, fmt.Errorf("cannot add a negative number to an unsigned integer: %d, %d", v1, v2)
+		if uint64(-v2) > v1 {
+			return numeric{}, fmt.Errorf("BIGINT.UNSIGNED.value.is.out.of.range.in: %d, %d", v1, v2)
+		}
+		return numeric{typ: Uint64, uval: v1 - uint64(-v2)}, nil
 	}
-	return uintPlusUint(v1, uint64(v2)), nil
+	return uintPlusUint(v1, uint64(v2))
 }
 
-func uintPlusUint(v1, v2 uint64) numeric {
+func uintPlusUint(v1, v2 uint64) (numeric, error) {
 	result := v1 + v2
 	if result < v2 {
-		return numeric{typ: Float64, fval: float64(v1) + float64(v2)}
+		return numeric{}, fmt.Errorf("BIGINT.UNSIGNED.value.is.out.of.range.in: %d, %d", v1, v2)
 	}
-	return numeric{typ: Uint64, uval: result}
+	return numeric{typ: Uint64, uval: result}, nil
 }
 
 func floatPlusAny(v1 float64, v2 numeric) numeric {
@@ -442,4 +605,67 @@ func Cast(v Value, typ querypb.Type) (Value, error) {
 	// If the above fast-paths were not possible,
 	// go through full validation.
 	return NewValue(typ, v.val)
+}
+
+func NullsafeBitAnd(v1, v2 Value) (Value, error) {
+	if v1.IsNull() {
+		return NULL, nil
+	}
+	if v2.IsNull() {
+		return NULL, nil
+	}
+
+	lv1, err := newNumericUint(v1)
+	if err != nil {
+		return NULL, err
+	}
+	lv2, err := newNumericUint(v2)
+	if err != nil {
+		return NULL, err
+	}
+
+	lresult := numeric{typ: Uint64, uval: lv1.uval & lv2.uval}
+	return castFromNumeric(lresult, querypb.Type_UINT64, -1)
+}
+
+func NullsafeBitOr(v1, v2 Value) (Value, error) {
+	if v1.IsNull() {
+		return NULL, nil
+	}
+	if v2.IsNull() {
+		return NULL, nil
+	}
+
+	lv1, err := newNumericUint(v1)
+	if err != nil {
+		return NULL, err
+	}
+	lv2, err := newNumericUint(v2)
+	if err != nil {
+		return NULL, err
+	}
+
+	lresult := numeric{typ: Uint64, uval: lv1.uval | lv2.uval}
+	return castFromNumeric(lresult, querypb.Type_UINT64, -1)
+}
+
+func NullsafeBitXor(v1, v2 Value) (Value, error) {
+	if v1.IsNull() {
+		return NULL, nil
+	}
+	if v2.IsNull() {
+		return NULL, nil
+	}
+
+	lv1, err := newNumericUint(v1)
+	if err != nil {
+		return NULL, err
+	}
+	lv2, err := newNumericUint(v2)
+	if err != nil {
+		return NULL, err
+	}
+
+	lresult := numeric{typ: Uint64, uval: lv1.uval ^ lv2.uval}
+	return castFromNumeric(lresult, querypb.Type_UINT64, -1)
 }

@@ -1,0 +1,324 @@
+{
+	"name": "student",
+	"slots-readonly": 4096,
+	"blocks-readonly": 64,
+	"shardtype": "HASH",
+	"shardkey": "id",
+	"partitions": [
+		{
+			"table": "student_0000",
+			"segment": "0-64",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0001",
+			"segment": "64-128",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0002",
+			"segment": "128-192",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0003",
+			"segment": "192-256",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0004",
+			"segment": "256-320",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0005",
+			"segment": "320-384",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0006",
+			"segment": "384-448",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0007",
+			"segment": "448-512",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0008",
+			"segment": "512-576",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0009",
+			"segment": "576-640",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0010",
+			"segment": "640-704",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0011",
+			"segment": "704-768",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0012",
+			"segment": "768-832",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0013",
+			"segment": "832-896",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0014",
+			"segment": "896-960",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0015",
+			"segment": "960-1024",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0016",
+			"segment": "1024-1088",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0017",
+			"segment": "1088-1152",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0018",
+			"segment": "1152-1216",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0019",
+			"segment": "1216-1280",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0020",
+			"segment": "1280-1365",
+			"backend": "backend1"
+		},
+		{
+			"table": "student_0021",
+			"segment": "1365-1429",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0022",
+			"segment": "1429-1493",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0023",
+			"segment": "1493-1557",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0024",
+			"segment": "1557-1621",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0025",
+			"segment": "1621-1685",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0026",
+			"segment": "1685-1749",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0027",
+			"segment": "1749-1813",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0028",
+			"segment": "1813-1877",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0029",
+			"segment": "1877-1941",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0030",
+			"segment": "1941-2005",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0031",
+			"segment": "2005-2069",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0032",
+			"segment": "2069-2133",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0033",
+			"segment": "2133-2197",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0034",
+			"segment": "2197-2261",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0035",
+			"segment": "2261-2325",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0036",
+			"segment": "2325-2389",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0037",
+			"segment": "2389-2453",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0038",
+			"segment": "2453-2517",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0039",
+			"segment": "2517-2581",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0040",
+			"segment": "2581-2645",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0041",
+			"segment": "2645-2730",
+			"backend": "backend2"
+		},
+		{
+			"table": "student_0042",
+			"segment": "2730-2794",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0043",
+			"segment": "2794-2858",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0044",
+			"segment": "2858-2922",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0045",
+			"segment": "2922-2986",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0046",
+			"segment": "2986-3050",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0047",
+			"segment": "3050-3114",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0048",
+			"segment": "3114-3178",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0049",
+			"segment": "3178-3242",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0050",
+			"segment": "3242-3306",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0051",
+			"segment": "3306-3370",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0052",
+			"segment": "3370-3434",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0053",
+			"segment": "3434-3498",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0054",
+			"segment": "3498-3562",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0055",
+			"segment": "3562-3626",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0056",
+			"segment": "3626-3690",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0057",
+			"segment": "3690-3754",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0058",
+			"segment": "3754-3818",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0059",
+			"segment": "3818-3882",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0060",
+			"segment": "3882-3946",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0061",
+			"segment": "3946-4010",
+			"backend": "backend3"
+		},
+		{
+			"table": "student_0062",
+			"segment": "4010-4096",
+			"backend": "backend3"
+		}
+	]
+}

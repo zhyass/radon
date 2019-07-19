@@ -1,0 +1,32 @@
+{
+	"backup": null,
+	"backends": [
+		{
+			"name": "backend1",
+			"address": "139.198.123.188:242",
+			"user": "user",
+			"password": "123456",
+			"database": "",
+			"charset": "utf8",
+			"max-connections": 1024
+		},
+		{
+			"name": "backend2",
+			"address": "139.198.123.188:246",
+			"user": "user",
+			"password": "123456",
+			"database": "",
+			"charset": "utf8",
+			"max-connections": 1024
+		},
+		{
+			"name": "backend3",
+			"address": "139.198.123.188:308",
+			"user": "usr",
+			"password": "123456",
+			"database": "",
+			"charset": "utf8",
+			"max-connections": 1024
+		}
+	]
+}

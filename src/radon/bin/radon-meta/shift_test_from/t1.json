@@ -1,0 +1,22 @@
+{
+	"name": "t1",
+	"shardtype": "GLOBAL",
+	"shardkey": "",
+	"partitions": [
+		{
+			"table": "t1",
+			"segment": "",
+			"backend": "backend1"
+		},
+		{
+			"table": "t1",
+			"segment": "",
+			"backend": "backend2"
+		},
+		{
+			"table": "t1",
+			"segment": "",
+			"backend": "backend3"
+		}
+	]
+}

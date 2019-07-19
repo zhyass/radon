@@ -1583,16 +1583,6 @@ func (node Exprs) WalkSubtree(visit Visit) error {
 	return nil
 }
 
-type ResultType int
-
-const (
-	StringResult ResultType = iota
-	IntResult
-	DecimalResult
-	RealResult
-	RowResult
-)
-
 // AndExpr represents an AND expression.
 type AndExpr struct {
 	Left, Right Expr
@@ -1617,10 +1607,6 @@ func (node *AndExpr) WalkSubtree(visit Visit) error {
 
 func (node *AndExpr) replace(from, to Expr) bool {
 	return replaceExprs(from, to, &node.Left, &node.Right)
-}
-
-func (node *AndExpr) ResultType() ResultType {
-	return IntResult
 }
 
 // OrExpr represents an OR expression.
@@ -1649,10 +1635,6 @@ func (node *OrExpr) replace(from, to Expr) bool {
 	return replaceExprs(from, to, &node.Left, &node.Right)
 }
 
-func (node *OrExpr) ResultType() ResultType {
-	return IntResult
-}
-
 // NotExpr represents a NOT expression.
 type NotExpr struct {
 	Expr Expr
@@ -1678,10 +1660,6 @@ func (node *NotExpr) replace(from, to Expr) bool {
 	return replaceExprs(from, to, &node.Expr)
 }
 
-func (node *NotExpr) ResultType() ResultType {
-	return IntResult
-}
-
 // ParenExpr represents a parenthesized boolean expression.
 type ParenExpr struct {
 	Expr Expr
@@ -1705,10 +1683,6 @@ func (node *ParenExpr) WalkSubtree(visit Visit) error {
 
 func (node *ParenExpr) replace(from, to Expr) bool {
 	return replaceExprs(from, to, &node.Expr)
-}
-
-func (node *ParenExpr) ResultType() ResultType {
-	return node.Expr.ResultType()
 }
 
 // ComparisonExpr represents a two-value comparison expression.
@@ -1762,10 +1736,6 @@ func (node *ComparisonExpr) replace(from, to Expr) bool {
 	return replaceExprs(from, to, &node.Left, &node.Right, &node.Escape)
 }
 
-func (node *ComparisonExpr) ResultType() ResultType {
-	return IntResult
-}
-
 // RangeCond represents a BETWEEN or a NOT BETWEEN expression.
 type RangeCond struct {
 	Operator string
@@ -1799,10 +1769,6 @@ func (node *RangeCond) WalkSubtree(visit Visit) error {
 
 func (node *RangeCond) replace(from, to Expr) bool {
 	return replaceExprs(from, to, &node.Left, &node.From, &node.To)
-}
-
-func (node *RangeCond) ResultType() ResultType {
-	return IntResult
 }
 
 // IsExpr represents an IS ... or an IS NOT ... expression.
@@ -1841,10 +1807,6 @@ func (node *IsExpr) replace(from, to Expr) bool {
 	return replaceExprs(from, to, &node.Expr)
 }
 
-func (node *IsExpr) ResultType() ResultType {
-	return IntResult
-}
-
 // ExistsExpr represents an EXISTS expression.
 type ExistsExpr struct {
 	Subquery *Subquery
@@ -1868,10 +1830,6 @@ func (node *ExistsExpr) WalkSubtree(visit Visit) error {
 
 func (node *ExistsExpr) replace(from, to Expr) bool {
 	return false
-}
-
-func (node *ExistsExpr) ResultType() ResultType {
-	return IntResult
 }
 
 // ValType specifies the type for SQLVal.
@@ -1952,18 +1910,6 @@ func (node *SQLVal) replace(from, to Expr) bool {
 	return false
 }
 
-func (node *SQLVal) ResultType() ResultType {
-	switch node.Type {
-	case IntVal, HexNum, HexVal:
-		return IntResult
-	case StrVal:
-		return StringResult
-	case FloatVal:
-		return RealResult
-	}
-	panic("unsupported sql value")
-}
-
 // HexDecode decodes the hexval into bytes.
 func (node *SQLVal) HexDecode() ([]byte, error) {
 	dst := make([]byte, hex.DecodedLen(len([]byte(node.Val))))
@@ -1991,10 +1937,6 @@ func (node *NullVal) replace(from, to Expr) bool {
 	return false
 }
 
-func (node *NullVal) ResultType() ResultType {
-	return StringResult
-}
-
 // BoolVal is true or false.
 type BoolVal bool
 
@@ -2014,10 +1956,6 @@ func (node BoolVal) WalkSubtree(visit Visit) error {
 
 func (node BoolVal) replace(from, to Expr) bool {
 	return false
-}
-
-func (node BoolVal) ResultType() ResultType {
-	return IntResult
 }
 
 // ColName represents a column name.
@@ -2055,26 +1993,10 @@ func (node *ColName) replace(from, to Expr) bool {
 	return false
 }
 
-func (node *ColName) ResultType() ResultType {
-	if node.Metadata == nil {
-		return StringResult
-	}
-	typ := node.Metadata.(Column).Val.Type()
-	if sqltypes.IsIntegral(typ) {
-		return IntResult
-	}
-	if sqltypes.IsFloat(typ) {
-		return RealResult
-	}
-	if typ == sqltypes.Decimal {
-		return DecimalResult
-	}
-	return StringResult
-}
-
 type Column struct {
-	Index int
-	Val   sqltypes.Value
+	Index   int
+	Val     sqltypes.Value
+	Decimal int
 }
 
 // Equal returns true if the column names match.
@@ -2119,10 +2041,6 @@ func (node ValTuple) replace(from, to Expr) bool {
 	return false
 }
 
-func (node ValTuple) ResultType() ResultType {
-	return node[0].ResultType()
-}
-
 // Subquery represents a subquery.
 type Subquery struct {
 	Select SelectStatement
@@ -2148,10 +2066,6 @@ func (node *Subquery) replace(from, to Expr) bool {
 	return false
 }
 
-func (node *Subquery) ResultType() ResultType {
-	panic("unreachable")
-}
-
 // ListArg represents a named list argument.
 type ListArg []byte
 
@@ -2167,10 +2081,6 @@ func (node ListArg) WalkSubtree(visit Visit) error {
 
 func (node ListArg) replace(from, to Expr) bool {
 	return false
-}
-
-func (node ListArg) ResultType() ResultType {
-	panic("unreachable")
 }
 
 // BinaryExpr represents a binary value expression.
@@ -2213,29 +2123,6 @@ func (node *BinaryExpr) WalkSubtree(visit Visit) error {
 
 func (node *BinaryExpr) replace(from, to Expr) bool {
 	return replaceExprs(from, to, &node.Left, &node.Right)
-}
-
-func (node *BinaryExpr) ResultType() ResultType {
-	var typ ResultType
-	switch node.Operator {
-	case ShiftLeftStr, ShiftRightStr, BitAndStr, BitOrStr, BitXorStr:
-		typ = IntResult
-	case PlusStr, MinusStr, MultStr, IntDivStr, DivStr, ModStr:
-		lr := node.Left.ResultType()
-		rr := node.Right.ResultType()
-		if lr == RealResult || rr == RealResult {
-			typ = RealResult
-		} else if lr == DecimalResult || rr == DecimalResult {
-			typ = DecimalResult
-		} else {
-			if node.Operator == DivStr {
-				typ = DecimalResult
-			} else {
-				typ = IntResult
-			}
-		}
-	}
-	return typ
 }
 
 // UnaryExpr represents a unary value expression.

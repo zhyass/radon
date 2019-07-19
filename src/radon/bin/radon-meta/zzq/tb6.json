@@ -1,0 +1,14 @@
+{
+	"name": "tb6",
+	"slots-readonly": 0,
+	"blocks-readonly": 0,
+	"shardtype": "SINGLE",
+	"shardkey": "",
+	"partitions": [
+		{
+			"table": "tb6",
+			"segment": "",
+			"backend": "backend1"
+		}
+	]
+}
