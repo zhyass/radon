@@ -63,10 +63,9 @@ func (u *UnionNode) getFields() []selectTuple {
 }
 
 // pushOrderBy used to push the order by exprs.
-func (u *UnionNode) pushOrderBy(sel sqlparser.SelectStatement) error {
-	node := sel.(*sqlparser.Union)
-	if len(node.OrderBy) > 0 {
-		orderPlan := NewOrderByPlan(u.log, node.OrderBy, u.getFields(), u.referTables)
+func (u *UnionNode) pushOrderBy(orderBy sqlparser.OrderBy) error {
+	if len(orderBy) > 0 {
+		orderPlan := NewOrderByPlan(u.log, orderBy, u.getFields(), u.referTables)
 		if err := orderPlan.Build(); err != nil {
 			return err
 		}
@@ -76,14 +75,63 @@ func (u *UnionNode) pushOrderBy(sel sqlparser.SelectStatement) error {
 }
 
 // pushLimit used to push limit.
-func (u *UnionNode) pushLimit(sel sqlparser.SelectStatement) error {
-	node := sel.(*sqlparser.Union)
-	if node.Limit != nil {
-		limitPlan := NewLimitPlan(u.log, node.Limit)
-		if err := limitPlan.Build(); err != nil {
-			return err
-		}
-		u.children = append(u.children, limitPlan)
-	}
-	return nil
+func (u *UnionNode) pushLimit(limit *sqlparser.Limit) error {
+	limitPlan := NewLimitPlan(u.log, limit)
+	u.children = append(u.children, limitPlan)
+	return limitPlan.Build()
+}
+
+// calcRoute will be called by subquery.
+func (u *UnionNode) calcRoute() (PlanNode, error) {
+	panic("unreachable")
+}
+
+// pushFilter will be called by subquery.
+func (u *UnionNode) pushFilter(filter exprInfo) error {
+	panic("unreachable")
+}
+
+// pushKeyFilter will be called by subquery.
+func (u *UnionNode) pushKeyFilter(filter exprInfo, table, field string) error {
+	panic("unreachable")
+}
+
+// pushSelectExpr will be called by subquery.
+func (u *UnionNode) pushSelectExpr(field selectTuple) (int, error) {
+	panic("unreachable")
+}
+
+// pushHaving will be called by subquery.
+func (u *UnionNode) pushHaving(having exprInfo) error {
+	panic("unreachable")
+}
+
+// pushMisc will be called by subquery.
+func (u *UnionNode) pushMisc(sel *sqlparser.Select) {
+	panic("unreachable")
+}
+
+// setNoTableFilter will be called by subquery.
+func (u *UnionNode) setNoTableFilter(exprs []sqlparser.Expr) {
+	panic("unreachable")
+}
+
+// pushSelectExprs just be called by the processSelect, UnionNode unreachable.
+func (u *UnionNode) pushSelectExprs(fields, groups []selectTuple, sel *sqlparser.Select, aggTyp aggrType) error {
+	panic("unreachable")
+}
+
+// setParent unreachable for UnionNode.
+func (u *UnionNode) setParent(p *JoinNode) {
+	panic("unreachable")
+}
+
+// reOrder unreachable for UnionNode.
+func (u *UnionNode) reOrder(int) {
+	panic("unreachable")
+}
+
+// Order satisfies the plannode interface, unreachable.
+func (u *UnionNode) Order() int {
+	panic("unreachable")
 }

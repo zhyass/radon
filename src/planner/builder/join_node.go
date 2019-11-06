@@ -54,7 +54,7 @@ type JoinNode struct {
 	// router.
 	router *router.Router
 	// Left and Right are the nodes for the join.
-	Left, Right SelectNode
+	Left, Right PlanNode
 	// join strategy.
 	Strategy JoinStrategy
 	// JoinTableExpr in FROM clause.
@@ -64,7 +64,7 @@ type JoinNode struct {
 	// whether has parenthese in FROM clause.
 	hasParen bool
 	// parent node in the plan tree.
-	parent SelectNode
+	parent *JoinNode
 	// children plans in select(such as: orderby, limit..).
 	children []ChildPlan
 	// Cols defines which columns from left or right results used to build the return result.
@@ -103,7 +103,7 @@ type JoinNode struct {
 }
 
 // newJoinNode used to create JoinNode.
-func newJoinNode(log *xlog.Log, Left, Right SelectNode, router *router.Router, joinExpr *sqlparser.JoinTableExpr,
+func newJoinNode(log *xlog.Log, Left, Right PlanNode, router *router.Router, joinExpr *sqlparser.JoinTableExpr,
 	joinOn []exprInfo, referTables map[string]*tableInfo) *JoinNode {
 	isLeftJoin := false
 	if joinExpr != nil && joinExpr.Join == sqlparser.LeftJoinStr {
@@ -133,52 +133,46 @@ func (j *JoinNode) getFields() []selectTuple {
 	return j.fields
 }
 
-// setParenthese set hasParen.
-func (j *JoinNode) setParenthese(hasParen bool) {
-	j.hasParen = hasParen
-}
-
 // pushFilter used to push the filters.
-func (j *JoinNode) pushFilter(filters []exprInfo) error {
+func (j *JoinNode) pushFilter(filter exprInfo) error {
+	if len(filter.referTables) == 0 {
+		j.noTableFilter = append(j.noTableFilter, filter.expr)
+		return nil
+	}
+
 	rightTbs := j.Right.getReferTables()
-	for _, filter := range filters {
-		if len(filter.referTables) == 0 {
-			j.noTableFilter = append(j.noTableFilter, filter.expr)
-			continue
+	// if left join's right node is null condition, it will not be pushed down.
+	if j.IsLeftJoin {
+		if ok, nullFunc := checkIsWithNull(filter, rightTbs); ok {
+			j.rightNull = append(j.rightNull, nullFunc)
+			return nil
 		}
+	}
 
-		// if left join's right node is null condition will not be pushed down.
-		if j.IsLeftJoin {
-			if ok, nullFunc := checkIsWithNull(filter, rightTbs); ok {
-				j.rightNull = append(j.rightNull, nullFunc)
-				continue
-			}
-		}
-
-		if len(filter.referTables) == 1 {
-			tb := filter.referTables[0]
-			tbInfo := j.referTables[tb]
-			if len(filter.cols) != 1 {
-				handleFilter(tbInfo.parent, filter)
-			} else {
-				if err := j.pushKeyFilter(filter, filter.cols[0].Qualifier.Name.String(), filter.cols[0].Name.String()); err != nil {
-					return err
-				}
-			}
+	if len(filter.referTables) == 1 {
+		tb := filter.referTables[0]
+		tbInfo := j.referTables[tb]
+		if len(filter.cols) != 1 {
+			handleFilter(tbInfo.parent, filter)
 		} else {
-			parent := findParent(filter.referTables, j)
-			handleFilter(parent, filter)
+			if err := j.pushKeyFilter(filter, filter.cols[0].Qualifier.Name.String(), filter.cols[0].Name.String()); err != nil {
+				return err
+			}
 		}
+	} else {
+		parent := findParent(filter.referTables, j)
+		handleFilter(parent, filter)
+	}
 
-		if j.IsLeftJoin && !j.HasRightFilter {
-			for _, tb := range filter.referTables {
-				if _, ok := rightTbs[tb]; ok {
-					j.HasRightFilter = true
-					break
-				}
+	if j.IsLeftJoin && !j.HasRightFilter {
+		for _, tb := range filter.referTables {
+			if _, ok := rightTbs[tb]; ok {
+				j.HasRightFilter = true
+				break
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -245,7 +239,7 @@ func (j *JoinNode) pushKeyFilter(filter exprInfo, table, field string) error {
 }
 
 // setParent set the parent node.
-func (j *JoinNode) setParent(p SelectNode) {
+func (j *JoinNode) setParent(p *JoinNode) {
 	j.parent = p
 }
 
@@ -367,9 +361,9 @@ func (j *JoinNode) setNestLoop() {
 // pushEqualCmpr used to push the equal Comparison type filters.
 // eg: 'select * from t1, t2 where t1.a=t2.a and t1.b=2'.
 // 't1.a=t2.a' is the 'join' type filters.
-func (j *JoinNode) pushEqualCmpr(joins []exprInfo) SelectNode {
+func (j *JoinNode) pushEqualCmpr(joins []exprInfo) PlanNode {
 	for i, joinFilter := range joins {
-		var parent SelectNode
+		var parent PlanNode
 		ltb := j.referTables[joinFilter.referTables[0]]
 		rtb := j.referTables[joinFilter.referTables[1]]
 		parent = findLCA(j, ltb.parent, rtb.parent)
@@ -384,7 +378,7 @@ func (j *JoinNode) pushEqualCmpr(joins []exprInfo) SelectNode {
 					if isSameShard(lmn.referTables, rmn.referTables, join.cols[0], join.cols[1]) {
 						mn, _ := mergeRoutes(lmn, rmn, node.joinExpr, nil)
 						mn.setParent(node.parent)
-						mn.setParenthese(node.hasParen)
+						setParenthese(mn, node.hasParen)
 
 						for _, filter := range node.otherFilter {
 							mn.addWhere(filter.expr)
@@ -400,14 +394,16 @@ func (j *JoinNode) pushEqualCmpr(joins []exprInfo) SelectNode {
 						}
 						mn.addWhere(join.expr)
 						if node.parent == nil {
-							return mn.pushEqualCmpr(joins[i+1:])
+							for _, joinFilter := range joins[i+1:] {
+								mn.addWhere(joinFilter.expr)
+							}
+							return mn
 						}
 
-						j := node.parent.(*JoinNode)
-						if j.Left == node {
-							j.Left = mn
+						if node.parent.Left == node {
+							node.parent.Left = mn
 						} else {
-							j.Right = mn
+							node.parent.Right = mn
 						}
 						continue
 					}
@@ -430,7 +426,7 @@ func (j *JoinNode) pushEqualCmpr(joins []exprInfo) SelectNode {
 }
 
 // calcRoute used to calc the route.
-func (j *JoinNode) calcRoute() (SelectNode, error) {
+func (j *JoinNode) calcRoute() (PlanNode, error) {
 	var err error
 	if j.Left, err = j.Left.calcRoute(); err != nil {
 		return j, err
@@ -450,13 +446,15 @@ func (j *JoinNode) calcRoute() (SelectNode, error) {
 				}
 				mn, _ := mergeRoutes(lmn, rmn, j.joinExpr, nil)
 				mn.setParent(j.parent)
-				mn.setParenthese(j.hasParen)
+				setParenthese(mn, j.hasParen)
 				for _, filter := range j.otherFilter {
 					mn.addWhere(filter.expr)
 				}
 				mn.setNoTableFilter(j.noTableFilter)
 				if j.joinExpr == nil && len(j.joinOn) > 0 {
-					mn.pushEqualCmpr(j.joinOn)
+					for _, joinFilter := range j.joinOn {
+						mn.addWhere(joinFilter.expr)
+					}
 				}
 				return mn, nil
 			}
@@ -591,7 +589,7 @@ func (j *JoinNode) pushOtherFilters(filters []exprInfo, isOtherJoin bool) error 
 }
 
 // pushOtherFilter used to push otherFilter.
-func (j *JoinNode) pushOtherFilter(node SelectNode, tuple selectTuple) (int, error) {
+func (j *JoinNode) pushOtherFilter(node PlanNode, tuple selectTuple) (int, error) {
 	var err error
 	index := -1
 
@@ -700,7 +698,7 @@ func (j *JoinNode) handleJoinOn() {
 	}
 }
 
-func (j *JoinNode) buildOrderBy(node SelectNode, tuple selectTuple) JoinKey {
+func (j *JoinNode) buildOrderBy(node PlanNode, tuple selectTuple) JoinKey {
 	var col *sqlparser.ColName
 	index := -1
 	table := tuple.info.referTables[0]
@@ -740,51 +738,48 @@ func (j *JoinNode) buildOrderBy(node SelectNode, tuple selectTuple) JoinKey {
 }
 
 // pushHaving used to push having exprs.
-func (j *JoinNode) pushHaving(havings []exprInfo) error {
-	for _, filter := range havings {
-		var parent SelectNode
-		if len(filter.referTables) == 0 {
-			j.Left.pushHaving([]exprInfo{filter})
-			j.Right.pushHaving([]exprInfo{filter})
-			continue
-		} else if len(filter.referTables) == 1 {
-			tbInfo := j.referTables[filter.referTables[0]]
-			parent = tbInfo.parent
-		} else {
-			for _, tb := range filter.referTables {
-				tbInfo := j.referTables[tb]
-				if parent == nil {
-					parent = tbInfo.parent
-					continue
-				}
-				if parent != tbInfo.parent {
-					if j.Strategy == NestLoop {
-						if parent.Order() < tbInfo.parent.Order() {
-							parent = tbInfo.parent
-						}
-					} else {
-						parent = findLCA(j, parent, tbInfo.parent)
+func (j *JoinNode) pushHaving(having exprInfo) error {
+	var parent PlanNode
+	if len(having.referTables) == 0 {
+		j.Left.pushHaving(having)
+		j.Right.pushHaving(having)
+		return nil
+	} else if len(having.referTables) == 1 {
+		tbInfo := j.referTables[having.referTables[0]]
+		parent = tbInfo.parent
+	} else {
+		for _, tb := range having.referTables {
+			tbInfo := j.referTables[tb]
+			if parent == nil {
+				parent = tbInfo.parent
+				continue
+			}
+			if parent != tbInfo.parent {
+				if j.Strategy == NestLoop {
+					if parent.Order() < tbInfo.parent.Order() {
+						parent = tbInfo.parent
 					}
+				} else {
+					parent = findLCA(j, parent, tbInfo.parent)
 				}
 			}
 		}
+	}
 
-		if mn, ok := parent.(*MergeNode); ok {
-			mn.addHaving(filter.expr)
-		} else {
-			buf := sqlparser.NewTrackedBuffer(nil)
-			filter.expr.Format(buf)
-			return errors.Errorf("unsupported: havings.'%s'.in.cross-shard.join", buf.String())
-		}
+	if mn, ok := parent.(*MergeNode); ok {
+		mn.addHaving(having.expr)
+	} else {
+		buf := sqlparser.NewTrackedBuffer(nil)
+		having.expr.Format(buf)
+		return errors.Errorf("unsupported: havings.'%s'.in.cross-shard.join", buf.String())
 	}
 	return nil
 }
 
 // pushOrderBy used to push the order by exprs.
-func (j *JoinNode) pushOrderBy(sel sqlparser.SelectStatement) error {
-	node := sel.(*sqlparser.Select)
-	if len(node.OrderBy) > 0 {
-		orderPlan := NewOrderByPlan(j.log, node.OrderBy, j.fields, j.referTables)
+func (j *JoinNode) pushOrderBy(orderBy sqlparser.OrderBy) error {
+	if len(orderBy) > 0 {
+		orderPlan := NewOrderByPlan(j.log, orderBy, j.fields, j.referTables)
 		if err := orderPlan.Build(); err != nil {
 			return err
 		}
@@ -795,8 +790,8 @@ func (j *JoinNode) pushOrderBy(sel sqlparser.SelectStatement) error {
 }
 
 // pushLimit used to push limit.
-func (j *JoinNode) pushLimit(sel sqlparser.SelectStatement) error {
-	limitPlan := NewLimitPlan(j.log, sel.(*sqlparser.Select).Limit)
+func (j *JoinNode) pushLimit(limit *sqlparser.Limit) error {
+	limitPlan := NewLimitPlan(j.log, limit)
 	j.children = append(j.children, limitPlan)
 	return limitPlan.Build()
 }

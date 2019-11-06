@@ -847,15 +847,15 @@ func TestSelectPlanJoin(t *testing.T) {
 				}},
 		},
 		{
-			query: "select * from B join B as A where A.a=B.a and A.id=B.id",
+			query: "select * from B join B as A where A.id=B.id and A.a=B.a",
 			out: []xcontext.QueryTuple{
 				{
-					Query:   "select * from sbtest.B0 as B, sbtest.B0 as A where A.a = B.a and A.id = B.id",
+					Query:   "select * from sbtest.B0 as B, sbtest.B0 as A where A.id = B.id and A.a = B.a",
 					Backend: "backend1",
 					Range:   "[0-512)",
 				},
 				{
-					Query:   "select * from sbtest.B1 as B, sbtest.B1 as A where A.a = B.a and A.id = B.id",
+					Query:   "select * from sbtest.B1 as B, sbtest.B1 as A where A.id = B.id and A.a = B.a",
 					Backend: "backend2",
 					Range:   "[512-4096)",
 				}},

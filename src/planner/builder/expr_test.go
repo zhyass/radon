@@ -128,18 +128,49 @@ func TestWhereFilters(t *testing.T) {
 		p, err := scanTableExprs(log, route, database, sel.From)
 		assert.Nil(t, err)
 
-		joins, filters, err := parserWhereOrJoinExprs(sel.Where.Expr, p.getReferTables())
+		p, err = pushFilters(p, sel.Where.Expr)
 		assert.Nil(t, err)
-
-		err = p.pushFilter(filters)
-		assert.Nil(t, err)
-
-		p = p.pushEqualCmpr(joins)
 
 		_, err = p.calcRoute()
 		assert.Nil(t, err)
 
 		assert.Nil(t, err)
+	}
+}
+
+func TestWhereFiltersError(t *testing.T) {
+	query := "select * from A where id=0x12"
+	want := "hash.unsupported.key.type:[3]"
+	log := xlog.NewStdLog(xlog.Level(xlog.PANIC))
+	database := "sbtest"
+
+	route, cleanup := router.MockNewRouter(log)
+	defer cleanup()
+
+	err := route.AddForTest(database, router.MockTableMConfig(), router.MockTableBConfig(), router.MockTableGConfig())
+	assert.Nil(t, err)
+
+	node, err := sqlparser.Parse(query)
+	assert.Nil(t, err)
+	sel := node.(*sqlparser.Select)
+
+	p, err := scanTableExprs(log, route, database, sel.From)
+	assert.Nil(t, err)
+
+	// where filter error.
+	{
+		p, err = pushFilters(p, sel.Where.Expr)
+		got := err.Error()
+		assert.Equal(t, want, got)
+	}
+	// check shard error.
+	{
+		_, err = checkShard("B", "id", p.getReferTables(), route)
+		assert.Equal(t, "unsupported: unknown.column.'B.id'.in.field.list", err.Error())
+	}
+	// get on tableinfo.
+	{
+		getOneTableInfo(nil)
 	}
 }
 
@@ -342,7 +373,7 @@ func TestSelectExprs(t *testing.T) {
 		err = p.pushSelectExprs(fields, groups, sel, aggTyp)
 		assert.Nil(t, err)
 
-		err = p.pushOrderBy(sel)
+		err = p.pushOrderBy(sel.OrderBy)
 		assert.Nil(t, err)
 	}
 }
@@ -415,10 +446,7 @@ func TestParserHaving(t *testing.T) {
 		err = p.pushSelectExprs(fields, nil, sel, aggTyp)
 		assert.Nil(t, err)
 
-		havings, err := parserHaving(sel.Having.Expr, p.getReferTables(), p.getFields())
-		assert.Nil(t, err)
-
-		err = p.pushHaving(havings)
+		err = pushHavings(p, sel.Having.Expr, p.getReferTables())
 		assert.Nil(t, err)
 	}
 }
@@ -457,15 +485,9 @@ func TestParserHavingError(t *testing.T) {
 		err = p.pushSelectExprs(fields, nil, sel, aggTyp)
 		assert.Nil(t, err)
 
-		havings, err := parserHaving(sel.Having.Expr, p.getReferTables(), p.getFields())
-		if err != nil {
-			got := err.Error()
-			assert.Equal(t, wants[i], got)
-		} else {
-			err = p.pushHaving(havings)
-			got := err.Error()
-			assert.Equal(t, wants[i], got)
-		}
+		err = pushHavings(p, sel.Having.Expr, p.getReferTables())
+		got := err.Error()
+		assert.Equal(t, wants[i], got)
 	}
 }
 
@@ -502,7 +524,7 @@ func TestPushOrderBy(t *testing.T) {
 			p.fields = fields
 		}
 
-		err = p.pushOrderBy(sel)
+		err = p.pushOrderBy(sel.OrderBy)
 		assert.Nil(t, err)
 	}
 }
@@ -544,7 +566,7 @@ func TestPushOrderByError(t *testing.T) {
 			p.fields = fields
 		}
 
-		err = p.pushOrderBy(sel)
+		err = p.pushOrderBy(sel.OrderBy)
 		got := err.Error()
 		assert.Equal(t, wants[i], got)
 	}
@@ -574,7 +596,7 @@ func TestPushLimit(t *testing.T) {
 		p, err := scanTableExprs(log, route, database, sel.From)
 		assert.Nil(t, err)
 
-		err = p.pushLimit(sel)
+		err = p.pushLimit(sel.Limit)
 		assert.Nil(t, err)
 		assert.Equal(t, 1, len(p.Children()))
 	}
@@ -606,7 +628,7 @@ func TestPushLimitError(t *testing.T) {
 		p, err := scanTableExprs(log, route, database, sel.From)
 		assert.Nil(t, err)
 
-		err = p.pushLimit(sel)
+		err = p.pushLimit(sel.Limit)
 		got := err.Error()
 		assert.Equal(t, wants[i], got)
 	}

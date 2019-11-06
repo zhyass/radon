@@ -93,7 +93,7 @@ func procure(tbInfos map[string]*tableInfo, col *sqlparser.ColName) string {
 	table := col.Qualifier.Name.String()
 	tbInfo := tbInfos[table]
 	node := tbInfo.parent
-	jn := node.parent.(*JoinNode)
+	jn := node.parent
 
 	joinVar = col.Qualifier.Name.CompliantName() + "_" + col.Name.CompliantName()
 	if _, ok := jn.Vars[joinVar]; ok {

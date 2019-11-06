@@ -47,14 +47,9 @@ func processSelect(log *xlog.Log, router *router.Router, database string, node *
 
 	tbInfos := root.getReferTables()
 	if node.Where != nil {
-		joins, filters, err := parserWhereOrJoinExprs(node.Where.Expr, tbInfos)
-		if err != nil {
+		if root, err = pushFilters(root, node.Where.Expr); err != nil {
 			return nil, err
 		}
-		if err = root.pushFilter(filters); err != nil {
-			return nil, err
-		}
-		root = root.pushEqualCmpr(joins)
 	}
 	if root, err = root.calcRoute(); err != nil {
 		return nil, err
@@ -91,21 +86,17 @@ func processSelect(log *xlog.Log, router *router.Router, database string, node *
 	}
 
 	if node.Having != nil {
-		havings, err := parserHaving(node.Having.Expr, tbInfos, root.getFields())
-		if err != nil {
-			return nil, err
-		}
-		if err = root.pushHaving(havings); err != nil {
+		if err = pushHavings(root, node.Having.Expr, tbInfos); err != nil {
 			return nil, err
 		}
 	}
 
-	if err = root.pushOrderBy(node); err != nil {
+	if err = root.pushOrderBy(node.OrderBy); err != nil {
 		return nil, err
 	}
 	// Limit SubPlan.
 	if node.Limit != nil {
-		if err = root.pushLimit(node); err != nil {
+		if err = root.pushLimit(node.Limit); err != nil {
 			return nil, err
 		}
 	}
@@ -186,11 +177,13 @@ func union(log *xlog.Log, router *router.Router, database string, left, right Pl
 	}
 end:
 	p := newUnionNode(log, left, right, node.Type)
-	if err := p.pushOrderBy(node); err != nil {
+	if err := p.pushOrderBy(node.OrderBy); err != nil {
 		return nil, err
 	}
-	if err := p.pushLimit(node); err != nil {
-		return nil, err
+	if node.Limit != nil {
+		if err := p.pushLimit(node.Limit); err != nil {
+			return nil, err
+		}
 	}
 	return p, nil
 }
