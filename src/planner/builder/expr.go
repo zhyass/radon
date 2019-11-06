@@ -365,3 +365,42 @@ func parserHaving(exprs sqlparser.Expr, tbInfos map[string]*tableInfo, fields []
 
 	return tuples, nil
 }
+
+// replaceCol replace the filter with field in from subquery.
+// such as: select b from (select a+1 as tmp,b from t1)t where tmp > 1;
+// `tmp > 1` will be overwritten as `a+1 > 1`.
+func replaceCol(info exprInfo, fields map[string]selectTuple) (exprInfo, error) {
+	var tables []string
+	var columns []*sqlparser.ColName
+	for _, col := range info.cols {
+		field, err := getMatchedField(col.Name.String(), fields)
+		if err != nil {
+			return info, err
+		}
+
+		if field.aggrFuc != "" {
+			return info, errors.New("unsupported: aggregation.field.in.subquery.is.used.in.clause")
+		}
+
+		info.expr = sqlparser.ReplaceExpr(info.expr, col, field.info.expr)
+
+		for _, referTable := range field.info.referTables {
+			match := false
+			for _, tb := range tables {
+				if tb == referTable {
+					match = true
+					break
+				}
+			}
+			if !match {
+				tables = append(tables, referTable)
+			}
+		}
+
+		columns = append(columns, field.info.cols...)
+	}
+	info.cols = columns
+	info.referTables = tables
+
+	return info, nil
+}

@@ -657,3 +657,59 @@ func TestPushMisc(t *testing.T) {
 		p.pushMisc(sel)
 	}
 }
+
+func TestReplace(t *testing.T) {
+	query := "select b from (select a+1 as tmp,sum(b) as cnt,a from A) t where tmp+a>2 and cnt>2"
+	log := xlog.NewStdLog(xlog.Level(xlog.PANIC))
+	database := "sbtest"
+
+	route, cleanup := router.MockNewRouter(log)
+	defer cleanup()
+
+	err := route.AddForTest(database, router.MockTableMConfig())
+	assert.Nil(t, err)
+
+	node, err := sqlparser.Parse(query)
+	assert.Nil(t, err)
+	sel := node.(*sqlparser.Select)
+
+	p, err := BuildNode(log, route, database, sel.From[0].(*sqlparser.AliasedTableExpr).Expr.(*sqlparser.Subquery).Select)
+	assert.Nil(t, err)
+
+	colMap := make(map[string]selectTuple)
+	for _, field := range p.getFields() {
+		name := field.alias
+		if name == "" {
+			name = field.field
+		}
+		colMap[name] = field
+	}
+
+	{
+		tuple := parserExpr(sel.Where.Expr.(*sqlparser.AndExpr).Left)
+		info, err := replaceCol(tuple.info, colMap)
+		assert.Nil(t, err)
+		buf := sqlparser.NewTrackedBuffer(nil)
+		info.expr.Format(buf)
+		assert.Equal(t, "A", info.referTables[0])
+		assert.Equal(t, "a + 1 + a > 2", buf.String())
+
+		field, err := replaceSelect(tuple, colMap)
+		buf = sqlparser.NewTrackedBuffer(nil)
+		field.expr.Format(buf)
+		assert.Nil(t, err)
+		assert.Equal(t, "a + 1 + a > 2 as `tmp + a > 2`", buf.String())
+	}
+	{
+		tuple := parserExpr(sel.Where.Expr.(*sqlparser.AndExpr).Right)
+		_, err = replaceSelect(tuple, colMap)
+		assert.NotNil(t, err)
+		assert.Equal(t, "unsupported: aggregation.field.in.subquery.is.used.in.clause", err.Error())
+	}
+	{
+		tuple := parserExpr(sel.SelectExprs[0].(*sqlparser.AliasedExpr).Expr)
+		_, err = replaceSelect(tuple, colMap)
+		assert.NotNil(t, err)
+		assert.Equal(t, "unsupported: unknown.column.name.'b'", err.Error())
+	}
+}

@@ -176,12 +176,6 @@ func setAggregatorType(hasAggr, hasDist, isMergeNode bool) aggrType {
 	return nullAgg
 }
 
-type nullExpr struct {
-	expr sqlparser.Expr
-	// referred tables.
-	referTables []string
-}
-
 // checkIsWithNull used to check whether `tb.col is null` or `tb.col<=> null`.
 func checkIsWithNull(filter exprInfo, tbInfos map[string]*tableInfo) (bool, selectTuple) {
 	if !checkTbInNode(filter.referTables, tbInfos) {
@@ -312,6 +306,16 @@ func checkInTuple(field, table string, tuples []selectTuple) (bool, *selectTuple
 	return false, nil
 }
 
+//getMatchedField used to find matched field in the subquery
+func getMatchedField(fieldName string, fields map[string]selectTuple) (selectTuple, error) {
+	for field, tuple := range fields {
+		if fieldName == field {
+			return tuple, nil
+		}
+	}
+	return selectTuple{}, errors.Errorf("unsupported: unknown.column.name.'%s'", fieldName)
+}
+
 // checkGroupBy used to check groupby.
 func checkGroupBy(exprs sqlparser.GroupBy, fields []selectTuple, router *router.Router, tbInfos map[string]*tableInfo, canOpt bool) ([]selectTuple, error) {
 	var groupTuples []selectTuple
@@ -437,4 +441,24 @@ func GetProject(root PlanNode) string {
 		prefix = ", "
 	}
 	return project
+}
+
+// replaceCol replace the selectTuple with field in from subquery.
+// such as: select tmp+1 from (select a+1 as tmp,b from t1)t;
+// `tmp+1` will be overwritten as 'a+1+1 as `tmp+1`'.
+func replaceSelect(field selectTuple, colMap map[string]selectTuple) (selectTuple, error) {
+	var err error
+	if len(field.info.referTables) > 0 {
+		field.info, err = replaceCol(field.info, colMap)
+		if err != nil {
+			return field, err
+		}
+		if expr, ok := field.expr.(*sqlparser.AliasedExpr); ok {
+			expr.Expr = field.info.expr
+			if field.alias == "" {
+				expr.As = sqlparser.NewColIdent(field.field)
+			}
+		}
+	}
+	return field, nil
 }
