@@ -94,7 +94,7 @@ func processSelect(log *xlog.Log, router *router.Router, database string, node *
 	if err = root.pushOrderBy(node.OrderBy); err != nil {
 		return nil, err
 	}
-	// Limit SubPlan.
+	// Limit ChildPlan.
 	if node.Limit != nil {
 		if err = root.pushLimit(node.Limit); err != nil {
 			return nil, err
@@ -124,9 +124,6 @@ func processPart(log *xlog.Log, router *router.Router, database string, part sql
 	case *sqlparser.Union:
 		return processUnion(log, router, database, part)
 	case *sqlparser.Select:
-		if len(part.OrderBy) > 0 && part.Limit == nil {
-			part.OrderBy = []*sqlparser.Order{}
-		}
 		if len(part.From) == 1 {
 			if aliasExpr, ok := part.From[0].(*sqlparser.AliasedTableExpr); ok {
 				if tb, ok := aliasExpr.Expr.(sqlparser.TableName); ok && tb.Name.String() == "dual" {
@@ -173,6 +170,7 @@ func union(log *xlog.Log, router *router.Router, database string, left, right Pl
 			v.parent = lm
 			lm.referTables[k] = v
 		}
+		lm.realTables = append(lm.realTables, rm.realTables...)
 		return lm, nil
 	}
 end:

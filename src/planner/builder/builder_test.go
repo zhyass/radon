@@ -774,6 +774,7 @@ func TestSelectPlanGlobal(t *testing.T) {
 		"select 1, sum(a),avg(a),a,b from sbtest.G where id>1 group by a,b order by a desc limit 10 offset 100",
 		"select G.a, G.b from G join G1 on G.a = G1.a where G1.id=1",
 		"select G.a, G.b from G, G1 where G.a = G1.a and G1.id=1",
+		"select a from (select a, id from G) as t where t.a > 1",
 	}
 
 	{
@@ -955,7 +956,7 @@ func TestProcessUnion(t *testing.T) {
 		{
 			query: "select a,b from S union (select a,b from G order by a) limit 10",
 			out: []xcontext.QueryTuple{{
-				Query:   "select a, b from sbtest.S union (select a, b from sbtest.G) limit 10",
+				Query:   "select a, b from sbtest.S union (select a, b from sbtest.G order by a asc) limit 10",
 				Backend: "backend1",
 				Range:   "",
 			}},

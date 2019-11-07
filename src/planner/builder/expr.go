@@ -404,3 +404,17 @@ func replaceCol(info exprInfo, fields map[string]selectTuple) (exprInfo, error) 
 
 	return info, nil
 }
+
+// fetchCols used to fetch cols from the expr.
+func fetchCols(expr sqlparser.Expr) []*sqlparser.ColName {
+	var cols []*sqlparser.ColName
+	sqlparser.Walk(func(node sqlparser.SQLNode) (kontinue bool, err error) {
+		switch node := node.(type) {
+		case *sqlparser.ColName:
+			cols = append(cols, node)
+		}
+		return true, nil
+	}, expr)
+
+	return cols
+}

@@ -11,6 +11,7 @@ package builder
 import (
 	"xcontext"
 
+	"github.com/pkg/errors"
 	"github.com/xelabs/go-mysqlstack/sqlparser"
 	"github.com/xelabs/go-mysqlstack/xlog"
 )
@@ -23,7 +24,8 @@ type UnionNode struct {
 	Typ      string
 	children []ChildPlan
 	// referred tables' tableInfo map.
-	referTables map[string]*tableInfo
+	referTables             map[string]*tableInfo
+	leftColMap, rightColMap map[string]selectTuple
 }
 
 func newUnionNode(log *xlog.Log, left, right PlanNode, typ string) *UnionNode {
@@ -81,49 +83,107 @@ func (u *UnionNode) pushLimit(limit *sqlparser.Limit) error {
 	return limitPlan.Build()
 }
 
-// calcRoute will be called by subquery.
-func (u *UnionNode) calcRoute() (PlanNode, error) {
-	panic("unreachable")
-}
-
-// pushFilter will be called by subquery.
-func (u *UnionNode) pushFilter(filter exprInfo) error {
-	panic("unreachable")
-}
-
-// pushKeyFilter will be called by subquery.
-func (u *UnionNode) pushKeyFilter(filter exprInfo, table, field string) error {
-	panic("unreachable")
-}
-
-// pushSelectExpr will be called by subquery.
-func (u *UnionNode) pushSelectExpr(field selectTuple) (int, error) {
-	panic("unreachable")
-}
-
-// pushHaving will be called by subquery.
-func (u *UnionNode) pushHaving(having exprInfo) error {
-	panic("unreachable")
-}
-
-// pushMisc will be called by subquery.
-func (u *UnionNode) pushMisc(sel *sqlparser.Select) {
-	panic("unreachable")
-}
-
-// setNoTableFilter will be called by subquery.
-func (u *UnionNode) setNoTableFilter(exprs []sqlparser.Expr) {
-	panic("unreachable")
-}
-
-// pushSelectExprs just be called by the processSelect, UnionNode unreachable.
 func (u *UnionNode) pushSelectExprs(fields, groups []selectTuple, sel *sqlparser.Select, aggTyp aggrType) error {
 	panic("unreachable")
 }
 
-// setParent unreachable for UnionNode.
+// 左右都要往里面push，首先要把field替换掉
+func (u *UnionNode) pushSelectExpr(field selectTuple) (int, error) {
+	var lidx, ridx int
+	var newField selectTuple
+	var err error
+
+	if lidx, err = handleSelectExpr(field, u.Left); err != nil {
+		return -1, err
+	}
+
+	expr := sqlparser.CloneSelectExpr(field.expr)
+	newField = parserExpr(expr.(*sqlparser.AliasedExpr).Expr)
+	if field.alias != "" {
+		newField.expr.(*sqlparser.AliasedExpr).As = sqlparser.NewColIdent(field.alias)
+		newField.alias = field.alias
+	}
+
+	if newField, err = replaceSelect(newField, u.rightColMap); err != nil {
+		return -1, err
+	}
+	if ridx, err = handleSelectExpr(newField, u.Right); err != nil {
+		return -1, err
+	}
+
+	if lidx != ridx {
+		return -1, err
+	}
+	return lidx, nil
+}
+
+func (u *UnionNode) pushFilter(filter exprInfo) error {
+	var err error
+	if err = handleFilter(filter, u.Left); err != nil {
+		return err
+	}
+
+	expr := sqlparser.CloneExpr(filter.expr)
+	newInfo := exprInfo{expr, nil, fetchCols(expr), nil}
+	newInfo, err = replaceCol(newInfo, u.rightColMap)
+	if err != nil {
+		return err
+	}
+
+	if len(newInfo.referTables) == 0 {
+		return errors.New("unsupport: cannot.push.where.clause.into.'dual'.table")
+	}
+	return handleFilter(newInfo, u.Right)
+}
+
+func (u *UnionNode) calcRoute() (PlanNode, error) {
+	var err error
+	if u.Left, err = u.Left.calcRoute(); err != nil {
+		return nil, err
+	}
+	if u.Right, err = u.Right.calcRoute(); err != nil {
+		return nil, err
+	}
+
+	return u, nil
+}
+
 func (u *UnionNode) setParent(p *JoinNode) {
 	panic("unreachable")
+}
+
+func (u *UnionNode) pushHaving(filter exprInfo) error {
+	var err error
+	if err = handleHaving(filter, u.Left); err != nil {
+		return err
+	}
+
+	expr := sqlparser.CloneExpr(filter.expr)
+	newInfo := exprInfo{expr, nil, fetchCols(expr), nil}
+	newInfo, err = replaceCol(newInfo, u.rightColMap)
+	if err != nil {
+		return err
+	}
+	if len(newInfo.referTables) == 0 {
+		return errors.New("unsupport: cannot.push.having.clause.into.'dual'.table")
+	}
+	return handleHaving(newInfo, u.Right)
+}
+
+func (u *UnionNode) pushKeyFilter(filter exprInfo, table, field string) error {
+	expr := sqlparser.CloneExpr(filter.expr)
+	newInfo := exprInfo{expr, []string{table}, fetchCols(expr), nil}
+	return u.pushFilter(newInfo)
+}
+
+func (u *UnionNode) addNoTableFilter(exprs []sqlparser.Expr) {
+	u.Left.addNoTableFilter(exprs)
+	u.Right.addNoTableFilter(exprs)
+}
+
+func (u *UnionNode) pushMisc(sel *sqlparser.Select) {
+	u.Left.pushMisc(sel)
+	u.Right.pushMisc(sel)
 }
 
 // reOrder unreachable for UnionNode.
