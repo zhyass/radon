@@ -54,6 +54,11 @@ type MergeNode struct {
 	ReqMode xcontext.RequestMode
 	// aliasIndex is the tmp col's alias index.
 	aliasIndex int
+	// subqery info.
+	subInfos []*derived
+	// real tables. such as: `select a from (select a,b from t1) t`
+	// `t1` is real table, `t` is derived table and will set in referTables.
+	realTables []*tableInfo
 }
 
 // newMergeNode used to create MergeNode.
@@ -133,8 +138,8 @@ func (m *MergeNode) addHaving(expr sqlparser.Expr) {
 	m.Sel.(*sqlparser.Select).AddHaving(expr)
 }
 
-// setNoTableFilter used to push the no table filters.
-func (m *MergeNode) setNoTableFilter(exprs []sqlparser.Expr) {
+// addNoTableFilter used to push the no table filters.
+func (m *MergeNode) addNoTableFilter(exprs []sqlparser.Expr) {
 	for _, expr := range exprs {
 		m.addWhere(expr)
 	}
@@ -143,19 +148,20 @@ func (m *MergeNode) setNoTableFilter(exprs []sqlparser.Expr) {
 // calcRoute used to calc the route.
 func (m *MergeNode) calcRoute() (PlanNode, error) {
 	var err error
-	for _, tbInfo := range m.referTables {
-		if m.nonGlobalCnt == 0 {
-			segments, err := m.router.Lookup(tbInfo.database, tbInfo.tableName, nil, nil)
-			if err != nil {
-				return nil, err
-			}
-			rand := rand.New(rand.NewSource(time.Now().UnixNano()))
-			idx := rand.Intn(len(segments))
-			m.backend = segments[idx].Backend
-			m.index = append(m.index, idx)
-			m.routeLen = 1
-			break
+	if m.nonGlobalCnt == 0 {
+		segments, err := m.router.Lookup(m.realTables[0].database, m.realTables[0].tableName, nil, nil)
+		if err != nil {
+			return nil, err
 		}
+		rand := rand.New(rand.NewSource(time.Now().UnixNano()))
+		idx := rand.Intn(len(segments))
+		m.backend = segments[idx].Backend
+		m.index = append(m.index, idx)
+		m.routeLen = 1
+		return m, nil
+	}
+
+	for _, tbInfo := range m.realTables {
 		if tbInfo.shardType == "GLOBAL" {
 			continue
 		}
@@ -166,9 +172,7 @@ func (m *MergeNode) calcRoute() (PlanNode, error) {
 		if m.backend == "" && len(tbInfo.Segments) == 1 {
 			m.backend = tbInfo.Segments[0].Backend
 		}
-		if m.routeLen == 0 {
-			m.routeLen = len(tbInfo.Segments)
-		}
+		m.routeLen = len(tbInfo.Segments)
 	}
 	return m, nil
 }
@@ -295,6 +299,11 @@ func (m *MergeNode) buildQuery(tbInfos map[string]*tableInfo) {
 
 	varFormatter := func(buf *sqlparser.TrackedBuffer, node sqlparser.SQLNode) {
 		switch node := node.(type) {
+		case *sqlparser.Subquery:
+			sub := sqlparser.NewTrackedBuffer(nil)
+			node.Format(sub)
+			buf.Myprintf("%s", sub.String())
+			return
 		case *sqlparser.ColName:
 			tableName := node.Qualifier.Name.String()
 			if tableName != "" {
@@ -311,7 +320,7 @@ func (m *MergeNode) buildQuery(tbInfos map[string]*tableInfo) {
 	for i := 0; i < m.routeLen; i++ {
 		// Rewrite the shard table's name.
 		backend := m.backend
-		for _, tbInfo := range m.referTables {
+		for _, tbInfo := range m.realTables {
 			if tbInfo.shardKey == "" {
 				continue
 			}

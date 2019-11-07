@@ -17,12 +17,15 @@ import (
 
 func checkTbName(tbInfos map[string]*tableInfo, node sqlparser.SQLNode) error {
 	return sqlparser.Walk(func(node sqlparser.SQLNode) (kontinue bool, err error) {
-		if col, ok := node.(*sqlparser.ColName); ok {
-			tableName := col.Qualifier.Name.String()
+		switch node := node.(type) {
+		case *sqlparser.Subquery:
+			return false, nil
+		case *sqlparser.ColName:
+			tableName := node.Qualifier.Name.String()
 			if tableName != "" {
 				if _, ok := tbInfos[tableName]; !ok {
 					buf := sqlparser.NewTrackedBuffer(nil)
-					col.Format(buf)
+					node.Format(buf)
 					return false, errors.Errorf("unsupported: unknown.column.'%s'.in.exprs", buf.String())
 				}
 			}
@@ -60,7 +63,9 @@ func getIndex(router *router.Router, tbInfo *tableInfo, val *sqlparser.SQLVal) e
 		return err
 	}
 
-	tbInfo.parent.index = append(tbInfo.parent.index, idx)
+	if m, ok := tbInfo.parent.(*MergeNode); ok {
+		m.index = append(m.index, idx)
+	}
 	return nil
 }
 
@@ -89,11 +94,17 @@ func getOneTableInfo(tbInfos map[string]*tableInfo) (string, *tableInfo) {
 // and returns the join var name for it.
 func procure(tbInfos map[string]*tableInfo, col *sqlparser.ColName) string {
 	var joinVar string
+	var jn *JoinNode
 	field := col.Name.String()
 	table := col.Qualifier.Name.String()
 	tbInfo := tbInfos[table]
 	node := tbInfo.parent
-	jn := node.parent
+	switch node := node.(type) {
+	case *MergeNode:
+		jn = node.parent
+	case *SubNode:
+		jn = node.parent
+	}
 
 	joinVar = col.Qualifier.Name.CompliantName() + "_" + col.Name.CompliantName()
 	if _, ok := jn.Vars[joinVar]; ok {

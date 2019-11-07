@@ -153,7 +153,9 @@ func (j *JoinNode) pushFilter(filter exprInfo) error {
 		tb := filter.referTables[0]
 		tbInfo := j.referTables[tb]
 		if len(filter.cols) != 1 {
-			handleFilter(tbInfo.parent, filter)
+			if err := setFilter(tbInfo.parent, filter); err != nil {
+				return err
+			}
 		} else {
 			if err := j.pushKeyFilter(filter, filter.cols[0].Qualifier.Name.String(), filter.cols[0].Name.String()); err != nil {
 				return err
@@ -161,7 +163,7 @@ func (j *JoinNode) pushFilter(filter exprInfo) error {
 		}
 	} else {
 		parent := findParent(filter.referTables, j)
-		handleFilter(parent, filter)
+		setFilter(parent, filter)
 	}
 
 	if j.IsLeftJoin && !j.HasRightFilter {
@@ -243,8 +245,8 @@ func (j *JoinNode) setParent(p *JoinNode) {
 	j.parent = p
 }
 
-// setNoTableFilter used to push the no table filters.
-func (j *JoinNode) setNoTableFilter(exprs []sqlparser.Expr) {
+// addNoTableFilter used to push the no table filters.
+func (j *JoinNode) addNoTableFilter(exprs []sqlparser.Expr) {
 	j.noTableFilter = append(j.noTableFilter, exprs...)
 }
 
@@ -296,7 +298,7 @@ func (j *JoinNode) setOtherJoin(filters []exprInfo) {
 func (j *JoinNode) pushOtherJoin() error {
 	if j.otherJoinOn != nil {
 		if len(j.otherJoinOn.noTables) > 0 {
-			j.Right.setNoTableFilter(j.otherJoinOn.noTables)
+			j.Right.addNoTableFilter(j.otherJoinOn.noTables)
 		}
 
 		for _, field := range j.otherJoinOn.left {
@@ -309,7 +311,9 @@ func (j *JoinNode) pushOtherJoin() error {
 
 		for _, filter := range j.otherJoinOn.right {
 			parent := findParent(filter.referTables, j.Right)
-			handleFilter(parent, filter)
+			if err := setFilter(parent, filter); err != nil {
+				return err
+			}
 		}
 
 		if len(j.otherJoinOn.others) > 0 {
@@ -450,7 +454,7 @@ func (j *JoinNode) calcRoute() (PlanNode, error) {
 				for _, filter := range j.otherFilter {
 					mn.addWhere(filter.expr)
 				}
-				mn.setNoTableFilter(j.noTableFilter)
+				mn.addNoTableFilter(j.noTableFilter)
 				if j.joinExpr == nil && len(j.joinOn) > 0 {
 					for _, joinFilter := range j.joinOn {
 						mn.addWhere(joinFilter.expr)
@@ -484,8 +488,7 @@ func (j *JoinNode) pushSelectExprs(fields, groups []selectTuple, sel *sqlparser.
 	if err := j.handleOthers(); err != nil {
 		return err
 	}
-	j.handleJoinOn()
-	return nil
+	return j.handleJoinOn()
 }
 
 // handleOthers used to handle otherJoinOn|rightNull|otherFilter.
@@ -532,18 +535,25 @@ func (j *JoinNode) pushOtherFilters(filters []exprInfo, isOtherJoin bool) error 
 		var lidx, ridx int
 		var exchange bool
 		if j.Strategy == NestLoop {
-			var m *MergeNode
+			var origin PlanNode
 			for _, tb := range filter.referTables {
 				tbInfo := j.referTables[tb]
-				if m == nil {
-					m = tbInfo.parent
+				if origin == nil {
+					origin = tbInfo.parent
 					continue
 				}
-				if m.Order() < tbInfo.parent.Order() {
-					m = tbInfo.parent
+				if origin.Order() < tbInfo.parent.Order() {
+					origin = tbInfo.parent
 				}
 			}
-			m.addWhere(filter.expr)
+
+			if m, ok := origin.(*MergeNode); ok {
+				m.addWhere(filter.expr)
+			} else {
+				buf := sqlparser.NewTrackedBuffer(nil)
+				filter.expr.Format(buf)
+				return errors.Errorf("unsupported: clause.'%s'.in.cross-shard.join", buf.String())
+			}
 			continue
 		}
 
@@ -646,6 +656,11 @@ func (j *JoinNode) pushSelectExpr(field selectTuple) (int, error) {
 			}
 		}
 
+		if j.Strategy == NestLoop {
+			if _, ok := j.Right.(*SubNode); ok {
+				return -1, errors.Errorf("unsupported: expr.'%s'.in.cross-shard.join", field.field)
+			}
+		}
 		index, err := j.Right.pushSelectExpr(field)
 		if err != nil {
 			return -1, err
@@ -657,16 +672,20 @@ func (j *JoinNode) pushSelectExpr(field selectTuple) (int, error) {
 }
 
 // handleJoinOn used to build order by based on On conditions.
-func (j *JoinNode) handleJoinOn() {
+func (j *JoinNode) handleJoinOn() error {
 	// eg: select t1.a,t2.a from t1 join t2 on t1.a=t2.a;
 	// push: select t1.a from t1 order by t1.a asc;
 	//       select t2.a from t2 order by t2.a asc;
 	if left, ok := j.Left.(*JoinNode); ok {
-		left.handleJoinOn()
+		if err := left.handleJoinOn(); err != nil {
+			return err
+		}
 	}
 
 	if right, ok := j.Right.(*JoinNode); ok {
-		right.handleJoinOn()
+		if err := right.handleJoinOn(); err != nil {
+			return err
+		}
 	}
 
 	for _, join := range j.joinOn {
@@ -681,7 +700,14 @@ func (j *JoinNode) handleJoinOn() {
 			if origin.Order() < rtb.parent.Order() {
 				origin = rtb.parent
 			}
-			origin.addWhere(join.expr)
+
+			if m, ok := origin.(*MergeNode); ok {
+				m.addWhere(join.expr)
+			} else {
+				buf := sqlparser.NewTrackedBuffer(nil)
+				join.expr.Format(buf)
+				return errors.Errorf("unsupported: clause.'%s'.in.cross-shard.join", buf.String())
+			}
 
 			leftKey = JoinKey{Field: join.cols[0].Name.String(),
 				Table: lt,
@@ -696,6 +722,7 @@ func (j *JoinNode) handleJoinOn() {
 		j.LeftKeys = append(j.LeftKeys, leftKey)
 		j.RightKeys = append(j.RightKeys, rightKey)
 	}
+	return nil
 }
 
 func (j *JoinNode) buildOrderBy(node PlanNode, tuple selectTuple) JoinKey {
@@ -766,14 +793,12 @@ func (j *JoinNode) pushHaving(having exprInfo) error {
 		}
 	}
 
-	if mn, ok := parent.(*MergeNode); ok {
-		mn.addHaving(having.expr)
-	} else {
+	if _, ok := parent.(*JoinNode); ok {
 		buf := sqlparser.NewTrackedBuffer(nil)
 		having.expr.Format(buf)
 		return errors.Errorf("unsupported: havings.'%s'.in.cross-shard.join", buf.String())
 	}
-	return nil
+	return parent.pushHaving(having)
 }
 
 // pushOrderBy used to push the order by exprs.
@@ -827,10 +852,10 @@ func (j *JoinNode) buildQuery(tbInfos map[string]*tableInfo) {
 		}
 	}
 
-	j.Right.setNoTableFilter(j.noTableFilter)
+	j.Right.addNoTableFilter(j.noTableFilter)
 	j.Right.buildQuery(tbInfos)
 
-	j.Left.setNoTableFilter(j.noTableFilter)
+	j.Left.addNoTableFilter(j.noTableFilter)
 	j.Left.buildQuery(tbInfos)
 }
 

@@ -477,7 +477,7 @@ func TestSelectUnsupportedPlan(t *testing.T) {
 	}
 	results := []string{
 		"unsupported: subqueries.in.select",
-		"unsupported: subqueries.in.select",
+		"unsupported: subqueries.in.select.exprs",
 	}
 
 	log := xlog.NewStdLog(xlog.Level(xlog.PANIC))

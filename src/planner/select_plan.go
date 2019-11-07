@@ -10,7 +10,6 @@ package planner
 
 import (
 	"encoding/json"
-	"errors"
 	"strings"
 
 	"planner/builder"
@@ -64,10 +63,6 @@ func NewSelectPlan(log *xlog.Log, database string, query string, node *sqlparser
 // For now, we don't support subquery in select.
 func (p *SelectPlan) Build() error {
 	var err error
-	// Check subquery.
-	if hasSubquery(p.node) {
-		return errors.New("unsupported: subqueries.in.select")
-	}
 	p.Root, err = builder.BuildNode(p.log, p.router, p.database, p.node)
 	return err
 }

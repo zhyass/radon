@@ -111,8 +111,8 @@ func (u *UnionNode) pushMisc(sel *sqlparser.Select) {
 	panic("unreachable")
 }
 
-// setNoTableFilter will be called by subquery.
-func (u *UnionNode) setNoTableFilter(exprs []sqlparser.Expr) {
+// addNoTableFilter will be called by subquery.
+func (u *UnionNode) addNoTableFilter(exprs []sqlparser.Expr) {
 	panic("unreachable")
 }
 
