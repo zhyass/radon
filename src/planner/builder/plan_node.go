@@ -17,6 +17,7 @@ import (
 
 // PlanNode interface.
 type PlanNode interface {
+	addNoTableFilter(exprs []sqlparser.Expr)
 	buildQuery(tbInfos map[string]*tableInfo)
 	calcRoute() (PlanNode, error)
 	Children() []ChildPlan
@@ -33,7 +34,6 @@ type PlanNode interface {
 	pushHaving(having exprInfo) error
 	reOrder(int)
 	setParent(p *JoinNode)
-	addNoTableFilter(exprs []sqlparser.Expr)
 	Order() int
 }
 
@@ -131,6 +131,10 @@ func pushHavings(s PlanNode, expr sqlparser.Expr, tbInfos map[string]*tableInfo)
 }
 
 func handleSelectExpr(field selectTuple, node PlanNode) (int, error) {
+	if u, ok := node.(*UnionNode); ok {
+		return u.pushSelectExpr(field)
+	}
+
 	parent := findParent(field.info.referTables, node)
 	if j, ok := parent.(*JoinNode); ok {
 		if j.Strategy != NestLoop {
@@ -141,6 +145,10 @@ func handleSelectExpr(field selectTuple, node PlanNode) (int, error) {
 }
 
 func handleFilter(filter exprInfo, node PlanNode) error {
+	if u, ok := node.(*UnionNode); ok {
+		return u.pushFilter(filter)
+	}
+
 	parent := findParent(filter.referTables, node)
 	if j, ok := parent.(*JoinNode); ok {
 		if j.Strategy == NestLoop {
@@ -155,6 +163,10 @@ func handleFilter(filter exprInfo, node PlanNode) error {
 }
 
 func handleHaving(having exprInfo, node PlanNode) error {
+	if u, ok := node.(*UnionNode); ok {
+		return u.pushHaving(having)
+	}
+
 	parent := findParent(having.referTables, node)
 	if j, ok := parent.(*JoinNode); ok {
 		if j.Strategy != NestLoop {

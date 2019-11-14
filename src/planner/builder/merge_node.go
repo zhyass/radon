@@ -148,6 +148,14 @@ func (m *MergeNode) addNoTableFilter(exprs []sqlparser.Expr) {
 // calcRoute used to calc the route.
 func (m *MergeNode) calcRoute() (PlanNode, error) {
 	var err error
+	if m.ReqMode == xcontext.ReqSingle {
+		if len(m.realTables) == 0 {
+			m.routeLen = 1
+			return m, nil
+		}
+		m.ReqMode = xcontext.ReqNormal
+	}
+
 	if m.nonGlobalCnt == 0 {
 		segments, err := m.router.Lookup(m.realTables[0].database, m.realTables[0].tableName, nil, nil)
 		if err != nil {

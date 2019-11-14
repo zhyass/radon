@@ -192,10 +192,6 @@ func TestSubqueryUnsupported(t *testing.T) {
 		out   string
 	}{
 		{
-			"select a from (select a,b from A union select a,b from B)t",
-			"unsupported: unknown.select.statement",
-		},
-		{
 			"select a from (select a,a,b from A)t",
 			"unsupported: duplicate.column.name.'a'",
 		},

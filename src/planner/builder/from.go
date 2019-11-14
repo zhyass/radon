@@ -133,14 +133,9 @@ func scanAliasedTableExpr(log *xlog.Log, r *router.Router, database string, tabl
 		mn.realTables = append(mn.realTables, tn)
 		return mn, err
 	case *sqlparser.Subquery:
-		var p PlanNode
-		switch node := expr.Select.(type) {
-		case *sqlparser.Select:
-			if p, err = processSelect(log, r, database, node); err != nil {
-				return nil, err
-			}
-		default:
-			return nil, errors.New("unsupported: unknown.select.statement")
+		p, err := processPart(log, r, database, expr.Select)
+		if err != nil {
+			return nil, err
 		}
 
 		tn := &tableInfo{
@@ -184,6 +179,17 @@ func scanAliasedTableExpr(log *xlog.Log, r *router.Router, database string, tabl
 				}
 				node.Sel = &sqlparser.Select{From: sqlparser.TableExprs([]sqlparser.TableExpr{tableExpr})}
 				return node, nil
+			}
+		case *UnionNode:
+			node.leftColMap = colMap
+			node.rightColMap = make(map[string]selectTuple)
+			leftField := node.getFields()
+			for i, field := range node.Right.getFields() {
+				name := leftField[i].alias
+				if name == "" {
+					name = leftField[i].field
+				}
+				node.rightColMap[name] = field
 			}
 		}
 

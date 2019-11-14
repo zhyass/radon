@@ -94,7 +94,7 @@ func processSelect(log *xlog.Log, router *router.Router, database string, node *
 	if err = root.pushOrderBy(node.OrderBy); err != nil {
 		return nil, err
 	}
-	// Limit SubPlan.
+	// Limit ChildPlan.
 	if node.Limit != nil {
 		if err = root.pushLimit(node.Limit); err != nil {
 			return nil, err
