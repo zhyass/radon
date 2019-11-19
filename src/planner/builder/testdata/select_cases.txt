@@ -1,0 +1,1533 @@
+# aggregation.
+"select 1, sum(A.a),avg(a),a,b from sbtest.A where id > 1 group by a,b order by a desc limit 10 offset 100"
+{
+    "Project": "1, sum(A.a), avg(a), a, b",
+    "Query": "select 1, sum(A.a), sum(a) as `avg(a)`, count(a), a, b from sbtest.? as A where id \u003e 1 group by a, b order by a desc",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[A1]"
+        },
+        {
+            "Backend": "backend2",
+            "Tables": "[A2]"
+        },
+        {
+            "Backend": "backend3",
+            "Tables": "[A3]"
+        },
+        {
+            "Backend": "backend4",
+            "Tables": "[A4]"
+        },
+        {
+            "Backend": "backend5",
+            "Tables": "[A5]"
+        },
+        {
+            "Backend": "backend6",
+            "Tables": "[A6]"
+        }
+    ],
+    "Aggregate": [
+        {
+            "Field": "sum(A.a)",
+            "Type": "SUM"
+        },
+        {
+            "Field": "avg(a)",
+            "Type": "AVG"
+        },
+        {
+            "Field": "sum(a)",
+            "Type": "SUM"
+        },
+        {
+            "Field": "count(a)",
+            "Type": "COUNT"
+        },
+        {
+            "Field": "a",
+            "Type": "GROUP BY"
+        },
+        {
+            "Field": "b",
+            "Type": "GROUP BY"
+        }
+    ],
+    "GatherMerge": [
+        {
+            "Field": "a",
+            "Direction": "DESC"
+        }
+    ],
+    "Limit": {
+        "Offset": 100,
+        "Limit": 10
+    }
+}
+
+# group by shard key.
+"select id, sum(a) as A from A group by id having id>1000"
+{
+    "Project": "id, A",
+    "Query": "select id, sum(a) as A from sbtest.? as A group by id having id \u003e 1000 order by id asc",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[A1]"
+        },
+        {
+            "Backend": "backend2",
+            "Tables": "[A2]"
+        },
+        {
+            "Backend": "backend3",
+            "Tables": "[A3]"
+        },
+        {
+            "Backend": "backend4",
+            "Tables": "[A4]"
+        },
+        {
+            "Backend": "backend5",
+            "Tables": "[A5]"
+        },
+        {
+            "Backend": "backend6",
+            "Tables": "[A6]"
+        }
+    ],
+    "GatherMerge": [
+        {
+            "Field": "id",
+            "Direction": "ASC"
+        }
+    ]
+}
+
+# where filter.
+"select id,a from sbtest.A where (a>1 and (id=1))"
+{
+    "Project": "id, a",
+    "Query": "select id, a from sbtest.? as A where a \u003e 1 and id = 1",
+    "Partitions": [
+        {
+            "Backend": "backend6",
+            "Tables": "[A6]"
+        }
+    ]
+}
+
+# where contains join key filter. 
+"select A.id,B.id from A join B on A.id=B.id where A.id=1"
+{
+    "Project": "id, id",
+    "Join": {
+        "Type": "INNER JOIN",
+        "Strategy": "Sort Merge Join"
+    },
+    "Left": {
+        "Query": "select A.id from sbtest.? as A where A.id = 1 order by A.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend6",
+                "Tables": "[A6]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select B.id from sbtest.? as B where B.id = 1 order by B.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend2",
+                "Tables": "[B1]"
+            }
+        ]
+    }
+}
+
+# join without equal conditions.
+"select A.id from A join B where A.id=1"
+{
+    "Project": "id",
+    "Join": {
+        "Type": "CROSS JOIN",
+        "Strategy": "Cartesian Join"
+    },
+    "Left": {
+        "Query": "select A.id from sbtest.? as A where A.id = 1",
+        "Partitions": [
+            {
+                "Backend": "backend6",
+                "Tables": "[A6]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select 1 from sbtest.? as B",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[B0]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[B1]"
+            }
+        ]
+    }
+}
+
+# left join with other join conditions.
+"select A.id from A left join B on A.id=B.id and A.a=1 and B.b=2 and 1=1 where B.id=1"
+{
+    "Project": "id",
+    "Join": {
+        "Type": "LEFT JOIN",
+        "Strategy": "Sort Merge Join"
+    },
+    "Left": {
+        "Query": "select A.id, A.a = 1 as tmpc_0 from sbtest.? as A where A.id = 1 order by A.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend6",
+                "Tables": "[A6]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select B.id from sbtest.? as B where B.id = 1 and 1 = 1 and B.b = 2 order by B.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend2",
+                "Tables": "[B1]"
+            }
+        ]
+    }
+}
+
+# nest loop join.
+"select A.id from A join B on A.id = B.id and concat(A.str,B.str) = 'golang' where A.id = 1"
+{
+    "Project": "id",
+    "Join": {
+        "Type": "INNER JOIN",
+        "Strategy": "Nested Loop Join"
+    },
+    "Left": {
+        "Query": "select A.id, A.str from sbtest.? as A where A.id = 1",
+        "Partitions": [
+            {
+                "Backend": "backend6",
+                "Tables": "[A6]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select 1 from sbtest.? as B where B.id = 1 and concat(:A_str, B.str) = 'golang' and :A_id = B.id",
+        "Partitions": [
+            {
+                "Backend": "backend2",
+                "Tables": "[B1]"
+            }
+        ]
+    }
+}
+
+# equal join conditions.
+"select A.id from A left join B on A.a+1=B.a where A.id=1"
+{
+    "Project": "id",
+    "Join": {
+        "Type": "LEFT JOIN",
+        "Strategy": "Sort Merge Join"
+    },
+    "Left": {
+        "Query": "select A.id, A.a + 1 as tmpc_0 from sbtest.? as A where A.id = 1 order by tmpc_0 asc",
+        "Partitions": [
+            {
+                "Backend": "backend6",
+                "Tables": "[A6]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select B.a from sbtest.? as B order by B.a asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[B0]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[B1]"
+            }
+        ]
+    }
+}
+
+# group by shard key.
+"select B.id as a from B group by a"
+{
+    "Project": "a",
+    "Query": "select B.id as a from sbtest.? as B group by a order by a asc",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[B0]"
+        },
+        {
+            "Backend": "backend2",
+            "Tables": "[B1]"
+        }
+    ],
+    "GatherMerge": [
+        {
+            "Field": "a",
+            "Direction": "ASC"
+        }
+    ]
+}
+
+# aggregation distinct.
+"select avg(distinct id) as tmp,b,sum(id),count(id) from B group by b"
+{
+    "Project": "tmp, b, sum(id), count(id)",
+    "Query": "select id as tmp, b, id as `sum(id)`, id as `count(id)` from sbtest.? as B group by b order by b asc",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[B0]"
+        },
+        {
+            "Backend": "backend2",
+            "Tables": "[B1]"
+        }
+    ],
+    "Aggregate": [
+        {
+            "Field": "avg(distinct id)",
+            "Type": "AVG",
+            "Distinct": true
+        },
+        {
+            "Field": "sum(id)",
+            "Type": "SUM"
+        },
+        {
+            "Field": "count(id)",
+            "Type": "COUNT"
+        },
+        {
+            "Field": "b",
+            "Type": "GROUP BY"
+        }
+    ]
+}
+
+# join contains aggregation.
+"select sum(A.a), B.b from A join B on A.id=B.id where A.id=1 group by B.b"
+{
+    "Project": "sum(A.a), b",
+    "Join": {
+        "Type": "INNER JOIN",
+        "Strategy": "Sort Merge Join"
+    },
+    "Left": {
+        "Query": "select A.a as `sum(A.a)`, A.id from sbtest.? as A where A.id = 1 order by A.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend6",
+                "Tables": "[A6]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select B.b, B.id from sbtest.? as B where B.id = 1 order by B.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend2",
+                "Tables": "[B1]"
+            }
+        ]
+    },
+    "Aggregate": [
+        {
+            "Field": "sum(A.a)",
+            "Type": "SUM"
+        },
+        {
+            "Field": "b",
+            "Type": "GROUP BY"
+        }
+    ]
+}
+
+# single table.
+"select 1, sum(a),avg(a),a,b from sbtest.S where id>1 group by a,b order by a desc limit 10 offset 100"
+{
+    "Project": "1, sum(a), avg(a), a, b",
+    "Query": "select 1, sum(a), avg(a), a, b from sbtest.S where id \u003e 1 group by a, b order by a desc limit 100, 10",
+    "Partitions": [
+        {
+            "Backend": "backend1"
+        }
+    ]
+}
+
+# no shard key tables' join.
+"select sum(G.a), S.b from G join S on G.id=S.id where G.id>1 group by S.b"
+{
+    "Project": "sum(G.a), b",
+    "Query": "select sum(G.a), S.b from sbtest.G join sbtest.S on G.id = S.id where G.id \u003e 1 group by S.b",
+    "Partitions": [
+        {
+            "Backend": "backend1"
+        }
+    ]
+}
+
+# single table join hash table, can push down.
+"select sum(A.a), S.b from A join S on A.id=S.id where A.id=0 group by S.b"
+{
+    "Project": "sum(A.a), b",
+    "Query": "select sum(A.a), S.b from sbtest.? as A join sbtest.S on A.id = S.id where A.id = 0 and S.id = 0 group by S.b",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[A1]"
+        }
+    ]
+}
+
+# single table join hash table, cannot push down.
+"select sum(A.a), S.b from A join S on A.id=S.id where A.id=1 group by S.b"
+{
+    "Project": "sum(A.a), b",
+    "Join": {
+        "Type": "INNER JOIN",
+        "Strategy": "Sort Merge Join"
+    },
+    "Left": {
+        "Query": "select A.a as `sum(A.a)`, A.id from sbtest.? as A where A.id = 1 order by A.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend6",
+                "Tables": "[A6]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select S.b, S.id from sbtest.S where S.id = 1 order by S.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend1"
+            }
+        ]
+    },
+    "Aggregate": [
+        {
+            "Field": "sum(A.a)",
+            "Type": "SUM"
+        },
+        {
+            "Field": "b",
+            "Type": "GROUP BY"
+        }
+    ]
+}
+
+# or conditions.
+"select * from A where id=1 or 2=id"
+{
+    "Project": "*",
+    "Query": "select * from sbtest.? as A where id in (1, 2)",
+    "Partitions": [
+        {
+            "Backend": "backend6",
+            "Tables": "[A6]"
+        }
+    ]
+}
+
+# or conditions.
+"select * from B where B.id=1 or B.id=2 or (B.id=0 and B.name='a')"
+{
+    "Project": "*",
+    "Query": "select * from sbtest.? as B where (B.id = 0 and B.name = 'a' or B.id in (1, 2))",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[B0]"
+        },
+        {
+            "Backend": "backend2",
+            "Tables": "[B1]"
+        }
+    ]
+}
+
+# or conditions.
+"select A.id,B.id from A join B on A.id=B.id where A.id=0 or A.id=1 or A.id=2"
+{
+    "Project": "id, id",
+    "Join": {
+        "Type": "INNER JOIN",
+        "Strategy": "Sort Merge Join"
+    },
+    "Left": {
+        "Query": "select A.id from sbtest.? as A where A.id in (0, 1, 2) order by A.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[A1]"
+            },
+            {
+                "Backend": "backend6",
+                "Tables": "[A6]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select B.id from sbtest.? as B where B.id in (0, 1, 2) order by B.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[B0]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[B1]"
+            }
+        ]
+    }
+}
+
+# nest loop join.
+"select S.a from A join B on A.id=B.id join S on A.a+B.a>S.a where A.id=1"
+{
+    "Project": "a",
+    "Join": {
+        "Type": "INNER JOIN",
+        "Strategy": "Nested Loop Join"
+    },
+    "Left": {
+        "Join": {
+            "Type": "INNER JOIN",
+            "Strategy": "Nested Loop Join"
+        },
+        "Left": {
+            "Query": "select A.a, A.id from sbtest.? as A where A.id = 1",
+            "Partitions": [
+                {
+                    "Backend": "backend6",
+                    "Tables": "[A6]"
+                }
+            ]
+        },
+        "Right": {
+            "Query": "select B.a from sbtest.? as B where B.id = 1 and :A_id = B.id",
+            "Partitions": [
+                {
+                    "Backend": "backend2",
+                    "Tables": "[B1]"
+                }
+            ]
+        }
+    },
+    "Right": {
+        "Query": "select S.a from sbtest.S where :A_a + :B_a \u003e S.a",
+        "Partitions": [
+            {
+                "Backend": "backend1"
+            }
+        ]
+    }
+}
+
+# having is null function.
+"select id,rand(id),str1,str2 from A having concat(str1,str2) is null"
+{
+    "Project": "id, rand(id), str1, str2",
+    "Query": "select id, rand(id), str1, str2 from sbtest.? as A having concat(str1, str2) is null",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[A1]"
+        },
+        {
+            "Backend": "backend2",
+            "Tables": "[A2]"
+        },
+        {
+            "Backend": "backend3",
+            "Tables": "[A3]"
+        },
+        {
+            "Backend": "backend4",
+            "Tables": "[A4]"
+        },
+        {
+            "Backend": "backend5",
+            "Tables": "[A5]"
+        },
+        {
+            "Backend": "backend6",
+            "Tables": "[A6]"
+        }
+    ]
+}
+
+# now().
+"select now() as time, count(1), avg(id), sum(b) from A"
+{
+    "Project": "time, count(1), avg(id), sum(b)",
+    "Query": "select now() as `time`, count(1), sum(id) as `avg(id)`, count(id), sum(b) from sbtest.? as A",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[A1]"
+        },
+        {
+            "Backend": "backend2",
+            "Tables": "[A2]"
+        },
+        {
+            "Backend": "backend3",
+            "Tables": "[A3]"
+        },
+        {
+            "Backend": "backend4",
+            "Tables": "[A4]"
+        },
+        {
+            "Backend": "backend5",
+            "Tables": "[A5]"
+        },
+        {
+            "Backend": "backend6",
+            "Tables": "[A6]"
+        }
+    ],
+    "Aggregate": [
+        {
+            "Field": "count(1)",
+            "Type": "COUNT"
+        },
+        {
+            "Field": "avg(id)",
+            "Type": "AVG"
+        },
+        {
+            "Field": "sum(id)",
+            "Type": "SUM"
+        },
+        {
+            "Field": "count(id)",
+            "Type": "COUNT"
+        },
+        {
+            "Field": "sum(b)",
+            "Type": "SUM"
+        }
+    ]
+}
+
+# aggregation with function.
+"select avg(id + 1) from A"
+{
+    "Project": "avg(id + 1)",
+    "Query": "select sum(id + 1) as `avg(id + 1)`, count(id + 1) from sbtest.? as A",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[A1]"
+        },
+        {
+            "Backend": "backend2",
+            "Tables": "[A2]"
+        },
+        {
+            "Backend": "backend3",
+            "Tables": "[A3]"
+        },
+        {
+            "Backend": "backend4",
+            "Tables": "[A4]"
+        },
+        {
+            "Backend": "backend5",
+            "Tables": "[A5]"
+        },
+        {
+            "Backend": "backend6",
+            "Tables": "[A6]"
+        }
+    ],
+    "Aggregate": [
+        {
+            "Field": "avg(id + 1)",
+            "Type": "AVG"
+        },
+        {
+            "Field": "sum(id + 1)",
+            "Type": "SUM"
+        },
+        {
+            "Field": "count(id + 1)",
+            "Type": "COUNT"
+        }
+    ]
+}
+
+# concat.
+"select concat(str1,str2) from A"
+{
+    "Project": "concat(str1, str2)",
+    "Query": "select concat(str1, str2) from sbtest.? as A",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[A1]"
+        },
+        {
+            "Backend": "backend2",
+            "Tables": "[A2]"
+        },
+        {
+            "Backend": "backend3",
+            "Tables": "[A3]"
+        },
+        {
+            "Backend": "backend4",
+            "Tables": "[A4]"
+        },
+        {
+            "Backend": "backend5",
+            "Tables": "[A5]"
+        },
+        {
+            "Backend": "backend6",
+            "Tables": "[A6]"
+        }
+    ]
+}
+
+# push down join.
+"select * from A join B on A.id=B.id where A.id=0"
+{
+    "Project": "*",
+    "Query": "select * from sbtest.? as A join sbtest.? as B on A.id = B.id where A.id = 0 and B.id = 0",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[A1,B0]"
+        }
+    ]
+}
+
+# multiple tables.
+"select A.id from A,B,B as C where B.id = 0 and A.id=C.id and A.id=0"
+{
+    "Project": "id",
+    "Join": {
+        "Type": "INNER JOIN",
+        "Strategy": "Sort Merge Join"
+    },
+    "Left": {
+        "Query": "select A.id from sbtest.? as A where A.id = 0 order by A.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[A1]"
+            }
+        ]
+    },
+    "Right": {
+        "Join": {
+            "Type": "CROSS JOIN",
+            "Strategy": "Cartesian Join"
+        },
+        "Left": {
+            "Query": "select 1 from sbtest.? as B where B.id = 0",
+            "Partitions": [
+                {
+                    "Backend": "backend1",
+                    "Tables": "[B0]"
+                }
+            ]
+        },
+        "Right": {
+            "Query": "select C.id from sbtest.? as C",
+            "Partitions": [
+                {
+                    "Backend": "backend1",
+                    "Tables": "[B0]"
+                },
+                {
+                    "Backend": "backend2",
+                    "Tables": "[B1]"
+                }
+            ]
+        }
+    }
+}
+
+# table alias.
+"select A.id from A,A as B where A.id=B.id and A.a=1"
+{
+    "Project": "id",
+    "Query": "select A.id from sbtest.? as A, sbtest.? as B where A.a = 1 and A.id = B.id",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[A1,A1]"
+        },
+        {
+            "Backend": "backend2",
+            "Tables": "[A2,A2]"
+        },
+        {
+            "Backend": "backend3",
+            "Tables": "[A3,A3]"
+        },
+        {
+            "Backend": "backend4",
+            "Tables": "[A4,A4]"
+        },
+        {
+            "Backend": "backend5",
+            "Tables": "[A5,A5]"
+        },
+        {
+            "Backend": "backend6",
+            "Tables": "[A6,A6]"
+        }
+    ]
+}
+
+# multiple tables join.
+"select A.id from A join B on A.id = B.id join G on G.id=A.id and A.id>1 and G.id=3"
+"pass"
+
+# left join, is null.
+"select A.id from A left join B on A.id=B.id where B.str is null"
+{
+    "Project": "id",
+    "Join": {
+        "Type": "LEFT JOIN",
+        "Strategy": "Sort Merge Join"
+    },
+    "Left": {
+        "Query": "select A.id from sbtest.? as A order by A.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[A1]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[A2]"
+            },
+            {
+                "Backend": "backend3",
+                "Tables": "[A3]"
+            },
+            {
+                "Backend": "backend4",
+                "Tables": "[A4]"
+            },
+            {
+                "Backend": "backend5",
+                "Tables": "[A5]"
+            },
+            {
+                "Backend": "backend6",
+                "Tables": "[A6]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select B.str, B.id from sbtest.? as B order by B.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[B0]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[B1]"
+            }
+        ]
+    }
+}
+
+# left join, safe equal.
+"select A.id from A left join B on A.id=B.id where B.str <=> null"
+{
+    "Project": "id",
+    "Join": {
+        "Type": "LEFT JOIN",
+        "Strategy": "Sort Merge Join"
+    },
+    "Left": {
+        "Query": "select A.id from sbtest.? as A order by A.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[A1]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[A2]"
+            },
+            {
+                "Backend": "backend3",
+                "Tables": "[A3]"
+            },
+            {
+                "Backend": "backend4",
+                "Tables": "[A4]"
+            },
+            {
+                "Backend": "backend5",
+                "Tables": "[A5]"
+            },
+            {
+                "Backend": "backend6",
+                "Tables": "[A6]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select B.str, B.id from sbtest.? as B order by B.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[B0]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[B1]"
+            }
+        ]
+    }
+}
+
+# left join, safe equal.
+"select A.id from A left join B on A.id=B.id where null <=> B.str"
+{
+    "Project": "id",
+    "Join": {
+        "Type": "LEFT JOIN",
+        "Strategy": "Sort Merge Join"
+    },
+    "Left": {
+        "Query": "select A.id from sbtest.? as A order by A.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[A1]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[A2]"
+            },
+            {
+                "Backend": "backend3",
+                "Tables": "[A3]"
+            },
+            {
+                "Backend": "backend4",
+                "Tables": "[A4]"
+            },
+            {
+                "Backend": "backend5",
+                "Tables": "[A5]"
+            },
+            {
+                "Backend": "backend6",
+                "Tables": "[A6]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select B.str, B.id from sbtest.? as B order by B.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[B0]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[B1]"
+            }
+        ]
+    }
+}
+
+# compression expression.
+"select A.id from A join B on A.id >= B.id join G on G.id<=A.id"
+"pass"
+
+# compression expression, right join.
+"select A.id from A join B on A.id=B.id right join G on G.id=A.id and A.a>B.a"
+"pass"
+
+# ParenTableExpr, left join.
+"select A.id from (A,B) left join G on A.id =G.id and A.a>B.a"
+"pass"
+
+# right join, is null cross shard.
+"select A.id from A join B on A.id=B.id right join G on G.id=A.id where concat(B.str,A.str) is null"
+"pass"
+
+# compression expression,is null cross shard.
+"select A.id from A join B on A.id >= B.id join G on G.id<=A.id where concat(B.str,A.str) is null"
+"pass"
+
+# multiple tables, nest loop join.
+"select A.id from A join B on A.id = B.id join G on G.id<=A.id+B.id"
+"pass"
+
+# multiple tables, nest loop join.
+"select A.id from A join B on A.id = B.id join G on A.id+B.id<=G.id"
+"pass"
+
+# ParenTableExpr,multiple tables, nest loop join.
+"select A.id from G join (A,B) on A.id+B.id<=G.id"
+"pass"
+
+# ParenTableExpr, multiple tables.
+"select A.id from G join (A,B) on G.id<=A.id+B.id"
+"pass"
+
+# aggregation, joinnode.
+"select sum(A.id) from A join B on A.id=B.id"
+{
+    "Project": "sum(A.id)",
+    "Join": {
+        "Type": "INNER JOIN",
+        "Strategy": "Sort Merge Join"
+    },
+    "Left": {
+        "Query": "select A.id as `sum(A.id)`, A.id from sbtest.? as A order by A.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[A1]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[A2]"
+            },
+            {
+                "Backend": "backend3",
+                "Tables": "[A3]"
+            },
+            {
+                "Backend": "backend4",
+                "Tables": "[A4]"
+            },
+            {
+                "Backend": "backend5",
+                "Tables": "[A5]"
+            },
+            {
+                "Backend": "backend6",
+                "Tables": "[A6]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select B.id from sbtest.? as B order by B.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[B0]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[B1]"
+            }
+        ]
+    },
+    "Aggregate": [
+        {
+            "Field": "sum(A.id)",
+            "Type": "SUM"
+        }
+    ]
+}
+
+# having.
+"select B.id,G.id,B.a from G,A,B where G.a+B.a>5 having G.id=B.id and B.a=1 and 1=1"
+"pass"
+
+# COALESCE in select list, left join.
+"select COALESCE(A.b, ''), IF(A.b IS NULL, FALSE, TRUE) AS spent from A left join B on A.a=B.a"
+{
+    "Project": "COALESCE(A.b, ''), spent",
+    "Join": {
+        "Type": "LEFT JOIN",
+        "Strategy": "Sort Merge Join"
+    },
+    "Left": {
+        "Query": "select COALESCE(A.b, ''), if(A.b is null, false, true) as spent, A.a from sbtest.? as A order by A.a asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[A1]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[A2]"
+            },
+            {
+                "Backend": "backend3",
+                "Tables": "[A3]"
+            },
+            {
+                "Backend": "backend4",
+                "Tables": "[A4]"
+            },
+            {
+                "Backend": "backend5",
+                "Tables": "[A5]"
+            },
+            {
+                "Backend": "backend6",
+                "Tables": "[A6]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select B.a from sbtest.? as B order by B.a asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[B0]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[B1]"
+            }
+        ]
+    }
+}
+
+# # COALESCE in select list.
+"select COALESCE(B.b, ''), IF(B.b IS NULL, FALSE, TRUE) AS spent from A join B on A.a=B.a"
+{
+    "Project": "COALESCE(B.b, ''), spent",
+    "Join": {
+        "Type": "INNER JOIN",
+        "Strategy": "Sort Merge Join"
+    },
+    "Left": {
+        "Query": "select A.a from sbtest.? as A order by A.a asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[A1]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[A2]"
+            },
+            {
+                "Backend": "backend3",
+                "Tables": "[A3]"
+            },
+            {
+                "Backend": "backend4",
+                "Tables": "[A4]"
+            },
+            {
+                "Backend": "backend5",
+                "Tables": "[A5]"
+            },
+            {
+                "Backend": "backend6",
+                "Tables": "[A6]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select COALESCE(B.b, ''), if(B.b is null, false, true) as spent, B.a from sbtest.? as B order by B.a asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[B0]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[B1]"
+            }
+        ]
+    }
+}
+
+# left join.
+"select A.id from A left join B on B.id+1=A.id where B.str1+B.str2 is null"
+{
+    "Project": "id",
+    "Join": {
+        "Type": "LEFT JOIN",
+        "Strategy": "Sort Merge Join"
+    },
+    "Left": {
+        "Query": "select A.id from sbtest.? as A order by A.id asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[A1]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[A2]"
+            },
+            {
+                "Backend": "backend3",
+                "Tables": "[A3]"
+            },
+            {
+                "Backend": "backend4",
+                "Tables": "[A4]"
+            },
+            {
+                "Backend": "backend5",
+                "Tables": "[A5]"
+            },
+            {
+                "Backend": "backend6",
+                "Tables": "[A6]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select B.str1 + B.str2 as tmpc_0, B.id + 1 as tmpc_1 from sbtest.? as B order by tmpc_1 asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[B0]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[B1]"
+            }
+        ]
+    }
+}
+
+# in|or expression.
+"select A.id from A join B on A.id=B.id where A.id in (1,2) or B.a=1"
+{
+    "Project": "id",
+    "Join": {
+        "Type": "INNER JOIN",
+        "Strategy": "Nested Loop Join"
+    },
+    "Left": {
+        "Query": "select A.id from sbtest.? as A",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[A1]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[A2]"
+            },
+            {
+                "Backend": "backend3",
+                "Tables": "[A3]"
+            },
+            {
+                "Backend": "backend4",
+                "Tables": "[A4]"
+            },
+            {
+                "Backend": "backend5",
+                "Tables": "[A5]"
+            },
+            {
+                "Backend": "backend6",
+                "Tables": "[A6]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select 1 from sbtest.? as B where (:A_id in (1, 2) or B.a in (1)) and :A_id = B.id",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[B0]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[B1]"
+            }
+        ]
+    }
+}
+
+# multiple tables, nest loop join.
+"select A.id from A join B on A.id = B.id join G on A.id+B.id<=G.id where A.str + B.str is null"
+"pass"
+
+# table alias.
+"select a1.id from A as a1 where a1.id>1000"
+{
+    "Project": "id",
+    "Query": "select a1.id from sbtest.? as a1 where a1.id \u003e 1000",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[A1]"
+        },
+        {
+            "Backend": "backend2",
+            "Tables": "[A2]"
+        },
+        {
+            "Backend": "backend3",
+            "Tables": "[A3]"
+        },
+        {
+            "Backend": "backend4",
+            "Tables": "[A4]"
+        },
+        {
+            "Backend": "backend5",
+            "Tables": "[A5]"
+        },
+        {
+            "Backend": "backend6",
+            "Tables": "[A6]"
+        }
+    ]
+}
+
+# global table.
+"select 1, sum(a),avg(a),a,b from sbtest.G where id>1 group by a,b order by a desc limit 10 offset 100"
+"pass"
+
+# global table join.
+"select G.a, G.b from G join G1 on G.a = G1.a where G1.id=1"
+"pass"
+
+# global table join.
+"select G.a, G.b from G, G1 where G.a = G1.a and G1.id=1"
+"pass"
+
+# global join hash.
+"select G.a, G.b from G join B on G.a = B.a where B.id=1"
+{
+    "Project": "a, b",
+    "Query": "select G.a, G.b from sbtest.G join sbtest.? as B on G.a = B.a where B.id = 1",
+    "Partitions": [
+        {
+            "Backend": "backend2",
+            "Tables": "[B1]"
+        }
+    ]
+}
+
+# multiple tables join, a hash table.
+"select G.a, G.b from G join B on G.a = B.a join G1 on G1.a = B.a where B.id=1"
+{
+    "Project": "a, b",
+    "Query": "select G.a, G.b from sbtest.G join sbtest.? as B on G.a = B.a join sbtest.G1 on G1.a = B.a where B.id = 1",
+    "Partitions": [
+        {
+            "Backend": "backend2",
+            "Tables": "[B1]"
+        }
+    ]
+}
+
+# global join hash.
+"select G.a, G.b from G, B where B.id=1"
+{
+    "Project": "a, b",
+    "Query": "select G.a, G.b from sbtest.G, sbtest.? as B where B.id = 1",
+    "Partitions": [
+        {
+            "Backend": "backend2",
+            "Tables": "[B1]"
+        }
+    ]
+}
+
+# global join hash.
+"select G.a, B.a from G join B on G.a = B.a order by B.a"
+{
+    "Project": "a, a",
+    "Query": "select G.a, B.a from sbtest.G join sbtest.? as B on G.a = B.a order by B.a asc",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[B0]"
+        },
+        {
+            "Backend": "backend2",
+            "Tables": "[B1]"
+        }
+    ],
+    "GatherMerge": [
+        {
+            "Field": "a",
+            "Table": "B",
+            "Direction": "ASC"
+        }
+    ]
+}
+
+# same route tables.
+"select * from B join B as A where A.a=B.a and A.id=B.id"
+{
+    "Project": "*",
+    "Query": "select * from sbtest.? as B, sbtest.? as A where A.a = B.a and A.id = B.id",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[B0,B0]"
+        },
+        {
+            "Backend": "backend2",
+            "Tables": "[B1,B1]"
+        }
+    ]
+}
+
+# list table.
+"select 1, sum(a),avg(a),a,b from sbtest.L where id>1 group by a,b order by a desc limit 10 offset 100"
+{
+    "Project": "1, sum(a), avg(a), a, b",
+    "Query": "select 1, sum(a), sum(a) as `avg(a)`, count(a), a, b from sbtest.? as L where id \u003e 1 group by a, b order by a desc",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[L_0000]"
+        },
+        {
+            "Backend": "backend2",
+            "Tables": "[L_0001];[L_0002]"
+        }
+    ],
+    "Aggregate": [
+        {
+            "Field": "sum(a)",
+            "Type": "SUM"
+        },
+        {
+            "Field": "avg(a)",
+            "Type": "AVG"
+        },
+        {
+            "Field": "sum(a)",
+            "Type": "SUM"
+        },
+        {
+            "Field": "count(a)",
+            "Type": "COUNT"
+        },
+        {
+            "Field": "a",
+            "Type": "GROUP BY"
+        },
+        {
+            "Field": "b",
+            "Type": "GROUP BY"
+        }
+    ],
+    "GatherMerge": [
+        {
+            "Field": "a",
+            "Direction": "DESC"
+        }
+    ],
+    "Limit": {
+        "Offset": 100,
+        "Limit": 10
+    }
+}
+
+# list join list.
+"select L.a, L.b from L join L1 on L.a = L1.a where L1.id=1"
+{
+    "Project": "a, b",
+    "Join": {
+        "Type": "INNER JOIN",
+        "Strategy": "Sort Merge Join"
+    },
+    "Left": {
+        "Query": "select L.a, L.b from sbtest.? as L order by L.a asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[L_0000]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[L_0001];[L_0002]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select L1.a from sbtest.? as L1 where L1.id = 1 order by L1.a asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[L1_0000]"
+            }
+        ]
+    }
+}
+
+# list join list.
+"select L.a, L.b from L, L1 where L.a = L1.a and L1.id=1"
+{
+    "Project": "a, b",
+    "Join": {
+        "Type": "INNER JOIN",
+        "Strategy": "Sort Merge Join"
+    },
+    "Left": {
+        "Query": "select L.a, L.b from sbtest.? as L order by L.a asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[L_0000]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[L_0001];[L_0002]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select L1.a from sbtest.? as L1 where L1.id = 1 order by L1.a asc",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[L1_0000]"
+            }
+        ]
+    }
+}
+
+# list join list.
+"select L.a, L.b from L, L1 where L.a = L1.a and L1.id=1 and L.id=1"
+{
+    "Project": "a, b",
+    "Query": "select L.a, L.b from sbtest.? as L, sbtest.? as L1 where L.id = 1 and L1.id = 1 and L.a = L1.a",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[L_0000,L1_0000]"
+        }
+    ]
+}

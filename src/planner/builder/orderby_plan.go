@@ -35,7 +35,7 @@ const (
 // OrderBy tuple.
 type OrderBy struct {
 	Field     string
-	Table     string
+	Table     string `json:",omitempty"`
 	Direction Direction
 }
 

@@ -9,16 +9,12 @@
 package planner
 
 import (
-	"encoding/json"
 	"errors"
-	"strings"
 
 	"planner/builder"
 	"router"
-	"xcontext"
 
 	"github.com/xelabs/go-mysqlstack/sqlparser"
-	"github.com/xelabs/go-mysqlstack/sqlparser/depends/common"
 	"github.com/xelabs/go-mysqlstack/xlog"
 )
 
@@ -79,93 +75,7 @@ func (p *SelectPlan) Type() PlanType {
 
 // JSON returns the plan info.
 func (p *SelectPlan) JSON() string {
-	type limit struct {
-		Offset int
-		Limit  int
-	}
-
-	type join struct {
-		Type     string
-		Strategy string
-	}
-
-	type explain struct {
-		RawQuery    string                `json:",omitempty"`
-		Project     string                `json:",omitempty"`
-		Partitions  []xcontext.QueryTuple `json:",omitempty"`
-		Join        *join                 `json:",omitempty"`
-		Aggregate   []string              `json:",omitempty"`
-		GatherMerge []string              `json:",omitempty"`
-		HashGroupBy []string              `json:",omitempty"`
-		Limit       *limit                `json:",omitempty"`
-	}
-
-	var joins *join
-	if j, ok := p.Root.(*builder.JoinNode); ok {
-		joins = &join{}
-		switch j.Strategy {
-		case builder.Cartesian:
-			joins.Strategy = "Cartesian Join"
-		case builder.SortMerge:
-			joins.Strategy = "Sort Merge Join"
-		case builder.NestLoop:
-			joins.Strategy = "Nested Loop Join"
-		}
-		if j.IsLeftJoin {
-			joins.Type = "LEFT JOIN"
-		} else {
-			if j.Strategy == builder.Cartesian {
-				joins.Type = "CROSS JOIN"
-			} else {
-				joins.Type = "INNER JOIN"
-			}
-		}
-	}
-
-	// Aggregate.
-	var aggregate []string
-	var hashGroup []string
-	var gatherMerge []string
-	var lim *limit
-	for _, sub := range p.Root.Children() {
-		switch sub.Type() {
-		case builder.ChildTypeAggregate:
-			plan := sub.(*builder.AggregatePlan)
-			for _, aggr := range plan.NormalAggregators() {
-				aggregate = append(aggregate, aggr.Field)
-			}
-			for _, aggr := range plan.GroupAggregators() {
-				hashGroup = append(hashGroup, aggr.Field)
-			}
-		case builder.ChildTypeOrderby:
-			plan := sub.(*builder.OrderByPlan)
-			for _, order := range plan.OrderBys {
-				field := order.Field
-				if order.Table != "" {
-					field = strings.Join([]string{order.Table, order.Field}, ".")
-				}
-				gatherMerge = append(gatherMerge, field)
-			}
-		case builder.ChildTypeLimit:
-			plan := sub.(*builder.LimitPlan)
-			lim = &limit{Offset: plan.Offset, Limit: plan.Limit}
-		}
-	}
-
-	exp := &explain{Project: builder.GetProject(p.Root),
-		RawQuery:    p.RawQuery,
-		Partitions:  p.Root.GetQuery(),
-		Join:        joins,
-		Aggregate:   aggregate,
-		GatherMerge: gatherMerge,
-		HashGroupBy: hashGroup,
-		Limit:       lim,
-	}
-	bout, err := json.MarshalIndent(exp, "", "\t")
-	if err != nil {
-		return err.Error()
-	}
-	return common.BytesToString(bout)
+	return builder.JSON(p.Root)
 }
 
 // Size returns the memory size.

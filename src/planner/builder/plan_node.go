@@ -9,9 +9,10 @@
 package builder
 
 import (
-	"xcontext"
+	"encoding/json"
 
 	"github.com/xelabs/go-mysqlstack/sqlparser"
+	"github.com/xelabs/go-mysqlstack/sqlparser/depends/common"
 )
 
 // PlanNode interface.
@@ -20,9 +21,9 @@ type PlanNode interface {
 	Children() []ChildPlan
 	getFields() []selectTuple
 	getReferTables() map[string]*tableInfo
-	GetQuery() []xcontext.QueryTuple
 	pushOrderBy(sel sqlparser.SelectStatement) error
 	pushLimit(sel sqlparser.SelectStatement) error
+	explain() *explain
 }
 
 // SelectNode interface.
@@ -86,4 +87,15 @@ func addFilter(s SelectNode, filter exprInfo) {
 	case *MergeNode:
 		node.addWhere(filter.expr)
 	}
+}
+
+// JSON returns the plan info.
+func JSON(p PlanNode) string {
+	exp := p.explain()
+	exp.Project = GetProject(p)
+	bout, err := json.MarshalIndent(exp, "", "\t")
+	if err != nil {
+		return err.Error()
+	}
+	return common.BytesToString(bout)
 }

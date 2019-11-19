@@ -11,6 +11,7 @@ package builder
 import (
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 
 	"router"
@@ -360,11 +361,6 @@ func (m *MergeNode) buildQuery(root PlanNode) {
 	}
 }
 
-// GetQuery used to get the Querys.
-func (m *MergeNode) GetQuery() []xcontext.QueryTuple {
-	return m.Querys
-}
-
 // GenerateFieldQuery generates a query with an impossible where.
 // This will be used on the RHS node to fetch field info if the LHS
 // returns no result.
@@ -386,4 +382,87 @@ func (m *MergeNode) GenerateFieldQuery() *sqlparser.ParsedQuery {
 	buf := sqlparser.NewTrackedBuffer(formatter)
 	formatter(buf, m.Sel)
 	return buf.ParsedQuery()
+}
+
+func (m *MergeNode) explain() *explain {
+	var partitions []partition
+	partMap := make(map[string]int)
+	query := m.Querys[0].Query
+	hasShards := true
+	for i := 0; i < m.routeLen; i++ {
+		var str string
+		backend := m.Querys[i].Backend
+		if hasShards {
+			for _, tbInfo := range m.referTables {
+				if tbInfo.shardKey == "" {
+					continue
+				}
+				table := tbInfo.Segments[i].Table
+				if i == 0 {
+					query = strings.Replace(query, table, "?", 1)
+				}
+
+				if str == "" {
+					str = table
+				} else {
+					str = str + "," + table
+				}
+			}
+		}
+
+		if str == "" {
+			hasShards = false
+		}
+
+		if idx, ok := partMap[backend]; ok {
+			if hasShards {
+				partitions[idx].Tables = partitions[idx].Tables + ";[" + str + "]"
+			}
+		} else {
+			partMap[backend] = len(partitions)
+			p := partition{
+				Backend: backend,
+			}
+			if hasShards {
+				p.Tables = "[" + str + "]"
+			}
+			partitions = append(partitions, p)
+		}
+	}
+	aggregate, gatherMerge, lim := childInfo(m.children)
+	return &explain{
+		Partitions:  partitions,
+		Query:       query,
+		Aggregate:   aggregate,
+		GatherMerge: gatherMerge,
+		Limit:       lim,
+	}
+}
+
+type limit struct {
+	Offset int
+	Limit  int
+}
+
+type joins struct {
+	Type     string
+	Strategy string
+}
+
+type partition struct {
+	Backend string `json:",omitempty"`
+	Tables  string `json:",omitempty"`
+}
+
+type explain struct {
+	Project     string       `json:",omitempty"`
+	Join        *joins       `json:",omitempty"`
+	Union       string       `json:",omitempty"`
+	Left        *explain     `json:",omitempty"`
+	Right       *explain     `json:",omitempty"`
+	Query       string       `json:",omitempty"`
+	Partitions  []partition  `json:",omitempty"`
+	Aggregate   []Aggregator `json:",omitempty"`
+	GatherMerge []OrderBy    `json:",omitempty"`
+	Limit       *limit       `json:",omitempty"`
 }

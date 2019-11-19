@@ -1,0 +1,195 @@
+# TODO: subquey in where clause.
+"select * from A as A1 where id in (select id from B)"
+"unsupported: subqueries.in.select"
+
+# TODO: subquey in select list.
+"select A.*,(select b.str from b where A.id=B.id) str from A"
+"unsupported: subqueries.in.select.exprs"
+
+# distinct only support colname.
+"select distinct(b) from A"
+"unsupported: distinct"
+
+# TODO: select * in cross-shard query.
+"select * from A join B on B.id=A.id"
+"unsupported: '*'.expression.in.cross-shard.query"
+
+# order by column must be in select list.
+"select id from A order by b"
+"unsupported: orderby[b].should.in.select.list"
+
+# limit only support num.
+"select id from A limit x"
+"unsupported: limit.offset.or.counts.must.be.IntVal"
+
+# TODO: having contain aggregation.
+"select age,count(*) from A group by age having count(*) >=2"
+"unsupported: expr[count(*)].in.having.clause"
+
+# unknown column in where clause.
+"select * from A where B.a >1"
+"unsupported: unknown.column.'B.a'.in.clause"
+
+# count syntax error.
+"select count() from A"
+"unsupported: invalid.use.of.group.function[count]"
+
+# TODO: function contain aggregation.
+"select round(avg(id)) from A"
+"unsupported: 'round(avg(id))'.contain.aggregate.in.select.exprs"
+
+# TODO: group_concat.
+"select id,group_concat(distinct name) from A group by id"
+"unsupported: group_concat.in.select.exprs"
+
+# TODO: next value.
+"select next value for A"
+"unsupported: nextval.in.select.exprs"
+
+# TODO: aggregation in expression.
+"select avg(id)*1000 from A"
+"unsupported: 'avg(id) * 1000'.contain.aggregate.in.select.exprs"
+
+# avg syntax error.
+"select avg(*) from A"
+"unsupported: syntax.error.at.'avg(*)'"
+
+# unknown table in select list.
+"select B.* from A"
+"unsupported:  unknown.table.'B'.in.field.list"
+
+# TODO: having contain aggregation.
+"select * from A where a>1 having count(a) >3"
+"unsupported: expr[count(a)].in.having.clause"
+
+# unknown column in group by.
+"select a,b from A group by B.a"
+"unsupported: unknow.table.in.group.by.field[B.a]"
+
+# TODO: aggregation and * in select list.
+"select *,avg(a) from A"
+"unsupported: exists.aggregate.and.'*'.select.exprs"
+
+# TODO: having contain aggregation.
+"select sum(A.id) as tmp, B.id from A,B having tmp=1"
+"unsupported: aggregation.in.having.clause"
+
+# TODO: function in left join.
+"select COALESCE(B.b, ''), IF(B.b IS NULL, FALSE, TRUE) AS spent from A left join B on A.a=B.a"
+"unsupported: expr.'COALESCE(B.b, '')'.in.cross-shard.left.join"
+
+# TODO: function in left join.
+"select abs(B.a) AS spent,G.a from A left join B on A.a=B.a,G"
+"unsupported: expr.'abs(B.a)'.in.cross-shard.left.join"
+
+# TODO: function in left join.
+"select abs(B.a) AS spent,G.a from G,A left join B on A.a=B.a"
+"unsupported: expr.'abs(B.a)'.in.cross-shard.left.join"
+
+# TODO: function in left join.
+"select A.id from A left join B on A.id=B.id right join G on A.id = G.id where length(B.str) is null"
+"unsupported: expr.'length(B.str)'.in.cross-shard.left.join"
+
+# TODO: function in left join.
+"select A.id from A left join B on A.id=B.id left join G on A.id = G.id and abs(B.a)"
+"unsupported: expr.'abs(B.a)'.in.cross-shard.left.join"
+
+# TODO: function in left join.
+"select A.id from A left join B on A.id=B.id join G on A.id = G.id and abs(B.a) > G.a"
+"unsupported: expr.'abs(B.a)'.in.cross-shard.left.join"
+
+# TODO: function in left join.
+"select A.id from A left join B on A.id=B.id join G on A.id = G.id and G.a < abs(B.a)"
+"unsupported: expr.'abs(B.a)'.in.cross-shard.left.join"
+
+# TODO: function in left join.
+"select A.id from A left join B on A.id=B.id left join G on A.id = G.id and G.a < abs(B.a)"
+"unsupported: expr.'abs(B.a)'.in.cross-shard.left.join"
+
+# TODO: function in left join.
+"select A.id from G, A left join B on A.id=B.id where G.a < abs(B.a)"
+"unsupported: expr.'abs(B.a)'.in.cross-shard.left.join"
+
+# TODO: function in left join.
+"select A.id from G, A left join B on A.id=B.id where abs(B.a) > G.a"
+"unsupported: expr.'abs(B.a)'.in.cross-shard.left.join"
+
+# TODO: function in left join.
+"select A.id from (G, A left join B on A.id=B.id),C where abs(B.a) > G.a"
+"unsupported: expr.'abs(B.a)'.in.cross-shard.left.join"
+
+# TODO: function in left join.
+"select A.id from C,(G, A left join B on A.id=B.id) where abs(B.a+B.b) > G.a"
+"unsupported: expr.'abs(B.a + B.b)'.in.cross-shard.left.join"
+
+# order by alias.
+"select A.a as b from A order by A.b"
+"unsupported: orderby[A.b].should.in.select.list"
+
+# TODO: order by only support colname.
+"select a+1 from A order by a+1"
+"unsupported: orderby:[a + 1].type.should.be.colname"
+
+# group by alias
+"select b as a from A group by A.a"
+"unsupported: group.by.field[A.a].should.be.in.select.list"
+
+# TODO: group by only support colname.
+"select a+1 from A group by a+1"
+"unsupported: group.by.[a + 1].type.should.be.colname"
+
+# count syntax error.
+"select count(distinct *) from A"
+"unsupported: syntax.error.at.'count(distinct *)'"
+
+# unknown colname, global table.
+"select t1.a from G"
+"unsupported: unknown.column.'t1.a'.in.exprs"
+
+# unknown column in cross shard query.
+"select S.id from A join B on B.id=A.id"
+"unsupported: unknown.column.'S.id'.in.field.list"
+
+# unknown column in cross shard query.
+"select eeeee from A join B on B.id=A.id"
+"unsupported: unknown.column.'eeeee'.in.select.exprs"
+
+# table not exists.
+"select D.a, D.b from sbtest.D join sbtest.G on G.id = D.id where D.id=1"
+"Table 'D' doesn't exist (errno 1146) (sqlstate 42S02)"
+
+# table not exists.
+"select G2.a, G2.b from sbtest.G2 join sbtest.B on G2.id = B.id where B.id=1"
+"Table 'G2' doesn't exist (errno 1146) (sqlstate 42S02)"
+
+# table not exists.
+"select G2.a, G2.b from sbtest.G2 join sbtest.C on G2.id = C.id where C.id=1"
+"Table 'G2' doesn't exist (errno 1146) (sqlstate 42S02)"
+
+# TODO: select *.
+"select * from B, (G join A on G.a=A.a) where A.a=1"
+"unsupported: '*'.expression.in.cross-shard.query"
+
+# TODO:select *.
+"select * from B, A where A.id=1 and B.a=A.a"
+"unsupported: '*'.expression.in.cross-shard.query"
+
+# different number of columns.
+"select a from A union select a,b from B"
+"unsupported: the.used.'select'.statements.have.a.different.number.of.columns"
+
+# order by should in select list.
+"select a from A union select b from B order by b"
+"unsupported: orderby[b].should.in.select.list"
+
+# limit should num.
+"select a from A union select b from B order by a limit x"
+"unsupported: limit.offset.or.counts.must.be.IntVal"
+
+# table not exists.
+"select a from D union select b from A limit 1"
+"Table 'D' doesn't exist (errno 1146) (sqlstate 42S02)"
+
+# table not exists.
+"select a from A union select b from D"
+"Table 'D' doesn't exist (errno 1146) (sqlstate 42S02)"

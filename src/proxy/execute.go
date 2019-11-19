@@ -192,7 +192,7 @@ func (spanner *Spanner) ExecuteStreamFetch(session *driver.Session, database str
 	}
 	reqCtx := xcontext.NewRequestContext()
 	reqCtx.Mode = m.ReqMode
-	reqCtx.Querys = m.GetQuery()
+	reqCtx.Querys = m.Querys
 	reqCtx.RawQuery = plan.RawQuery
 	streamBufferSize := spanner.conf.Proxy.StreamBufferSize
 	return txn.ExecuteStreamFetch(reqCtx, callback, streamBufferSize)

@@ -1,0 +1,162 @@
+# global union hash.
+"select a,b from G union select a,b from A where id=1 order by a limit 10"
+{
+    "Project": "a, b",
+    "Query": "select a, b from sbtest.G union select a, b from sbtest.? as A where id = 1 order by a asc limit 10",
+    "Partitions": [
+        {
+            "Backend": "backend6",
+            "Tables": "[A6]"
+        }
+    ]
+}
+
+# hash union hash.
+"select a,b from A where id=1 union select a,b from B where id=0 order by a limit 10"
+{
+    "Project": "a, b",
+    "Union": "union",
+    "Left": {
+        "Query": "select a, b from sbtest.? as A where id = 1",
+        "Partitions": [
+            {
+                "Backend": "backend6",
+                "Tables": "[A6]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select a, b from sbtest.? as B where id = 0",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[B0]"
+            }
+        ]
+    },
+    "GatherMerge": [
+        {
+            "Field": "a",
+            "Direction": "ASC"
+        }
+    ],
+    "Limit": {
+        "Offset": 0,
+        "Limit": 10
+    }
+}
+
+# single union global.
+"select a,b from S union (select a,b from G order by a) limit 10"
+{
+    "Project": "a, b",
+    "Query": "select a, b from sbtest.S union (select a, b from sbtest.G) limit 10",
+    "Partitions": [
+        {
+            "Backend": "backend1"
+        }
+    ]
+}
+
+# union all.
+"select a,b from S union all (select a,b from A where id=1 union select a,b from B where id=0 order by a limit 10) order by b"
+{
+    "Project": "a, b",
+    "Union": "union all",
+    "Left": {
+        "Query": "select a, b from sbtest.S",
+        "Partitions": [
+            {
+                "Backend": "backend1"
+            }
+        ]
+    },
+    "Right": {
+        "Union": "union",
+        "Left": {
+            "Query": "select a, b from sbtest.? as A where id = 1",
+            "Partitions": [
+                {
+                    "Backend": "backend6",
+                    "Tables": "[A6]"
+                }
+            ]
+        },
+        "Right": {
+            "Query": "select a, b from sbtest.? as B where id = 0",
+            "Partitions": [
+                {
+                    "Backend": "backend1",
+                    "Tables": "[B0]"
+                }
+            ]
+        },
+        "GatherMerge": [
+            {
+                "Field": "a",
+                "Direction": "ASC"
+            }
+        ],
+        "Limit": {
+            "Offset": 0,
+            "Limit": 10
+        }
+    },
+    "GatherMerge": [
+        {
+            "Field": "b",
+            "Direction": "ASC"
+        }
+    ]
+}
+
+# dual union hash.
+"select 1 union select a from A where id=1 order by 1 limit 10"
+{
+    "Project": "1",
+    "Query": "select 1 from dual union select a from sbtest.? as A where id = 1 order by 1 asc limit 10",
+    "Partitions": [
+        {
+            "Backend": "backend6",
+            "Tables": "[A6]"
+        }
+    ]
+}
+
+# union distinct.
+"select a as tmp,b from B union distinct (select a,b from S union select 1,'a') order by a limit 10"
+{
+    "Project": "tmp, b",
+    "Union": "union distinct",
+    "Left": {
+        "Query": "select a as tmp, b from sbtest.? as B",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[B0]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[B1]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select a, b from sbtest.S union select 1, 'a' from dual",
+        "Partitions": [
+            {
+                "Backend": "backend1"
+            }
+        ]
+    },
+    "GatherMerge": [
+        {
+            "Field": "tmp",
+            "Direction": "ASC"
+        }
+    ],
+    "Limit": {
+        "Offset": 0,
+        "Limit": 10
+    }
+}

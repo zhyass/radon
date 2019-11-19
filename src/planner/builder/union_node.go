@@ -9,8 +9,6 @@
 package builder
 
 import (
-	"xcontext"
-
 	"github.com/xelabs/go-mysqlstack/sqlparser"
 	"github.com/xelabs/go-mysqlstack/xlog"
 )
@@ -51,13 +49,6 @@ func (u *UnionNode) getReferTables() map[string]*tableInfo {
 	return u.referTables
 }
 
-// GetQuery used to get the Querys.
-func (u *UnionNode) GetQuery() []xcontext.QueryTuple {
-	querys := u.Left.GetQuery()
-	querys = append(querys, u.Right.GetQuery()...)
-	return querys
-}
-
 func (u *UnionNode) getFields() []selectTuple {
 	return u.Left.getFields()
 }
@@ -86,4 +77,16 @@ func (u *UnionNode) pushLimit(sel sqlparser.SelectStatement) error {
 		u.children = append(u.children, limitPlan)
 	}
 	return nil
+}
+
+func (u *UnionNode) explain() *explain {
+	aggregate, gatherMerge, lim := childInfo(u.children)
+	return &explain{
+		Union:       u.Typ,
+		Left:        u.Left.explain(),
+		Right:       u.Right.explain(),
+		Aggregate:   aggregate,
+		GatherMerge: gatherMerge,
+		Limit:       lim,
+	}
 }

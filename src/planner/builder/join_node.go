@@ -10,7 +10,6 @@ package builder
 
 import (
 	"router"
-	"xcontext"
 
 	"github.com/pkg/errors"
 	"github.com/xelabs/go-mysqlstack/sqlparser"
@@ -856,13 +855,6 @@ func (j *JoinNode) buildQuery(root PlanNode) {
 	j.Left.buildQuery(root)
 }
 
-// GetQuery used to get the Querys.
-func (j *JoinNode) GetQuery() []xcontext.QueryTuple {
-	querys := j.Left.GetQuery()
-	querys = append(querys, j.Right.GetQuery()...)
-	return querys
-}
-
 // procure requests for the specified column from the plan
 // and returns the join var name for it.
 func (j *JoinNode) procure(col *sqlparser.ColName) string {
@@ -899,4 +891,36 @@ func (j *JoinNode) procure(col *sqlparser.ColName) string {
 
 	j.Vars[joinVar] = index
 	return joinVar
+}
+
+func (j *JoinNode) explain() *explain {
+	join := &joins{}
+	switch j.Strategy {
+	case Cartesian:
+		join.Strategy = "Cartesian Join"
+	case SortMerge:
+		join.Strategy = "Sort Merge Join"
+	case NestLoop:
+		join.Strategy = "Nested Loop Join"
+	}
+
+	if j.IsLeftJoin {
+		join.Type = "LEFT JOIN"
+	} else {
+		if j.Strategy == Cartesian {
+			join.Type = "CROSS JOIN"
+		} else {
+			join.Type = "INNER JOIN"
+		}
+	}
+
+	aggregate, gatherMerge, lim := childInfo(j.children)
+	return &explain{
+		Join:        join,
+		Left:        j.Left.explain(),
+		Right:       j.Right.explain(),
+		Aggregate:   aggregate,
+		GatherMerge: gatherMerge,
+		Limit:       lim,
+	}
 }

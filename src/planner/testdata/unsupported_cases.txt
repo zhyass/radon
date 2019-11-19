@@ -1,0 +1,143 @@
+# alter modify shard key error.
+"alter table A modify column id int"
+"unsupported: cannot.modify.the.column.on.shard.key"
+
+# alter drop shard key error.
+"alter table A drop column id"
+"unsupported: cannot.drop.the.column.on.shard.key"
+
+# alter modify column to constraint error.
+"alter table A modify column b varchar(1) key"
+"The unique/primary constraint should be only defined on the sharding key column[id]"
+
+# alter modify column to key error.
+"alter table A modify column b varchar(1) primary key"
+"The unique/primary constraint should be only defined on the sharding key column[id]"
+
+# alter modify column to unique error.
+"alter table A modify column b varchar(1) unique"
+"The unique/primary constraint should be only defined on the sharding key column[id]"
+
+# alter modify column to unique key error.
+"alter table A modify column b varchar(1) unique key"
+"The unique/primary constraint should be only defined on the sharding key column[id]"
+
+# alter add `key` column  error.
+"alter table A add column(c3 int key, c4 varchar(100))"
+"The unique/primary constraint should be only defined on the sharding key column[id]"
+
+# alter add `primary key` column error.
+"alter table A add column(c4 int primary key, c5 varchar(100))"
+"The unique/primary constraint should be only defined on the sharding key column[id]"
+
+# alter add `unique key` column error.
+"alter table A add column(c6 int unique key, c7 varchar(100))"
+"The unique/primary constraint should be only defined on the sharding key column[id]"
+
+# alter add `primary key` columns error.
+"alter table A add column(c8 int, c9 varchar(100), primary key(c8, c9))"
+"The unique/primary constraint should be only defined on the sharding key column[id]"
+
+# alter add `primary key` column error.
+"alter table A add column(c10 int, c11 varchar(100), primary key(c14))"
+"The unique/primary constraint should be only defined on the sharding key column[id]"
+
+# delete with in filter.
+"delete from A where id in (0, 0x12)"
+"hash.unsupported.key.type:[3]"
+
+# delete without where filter.
+"delete from sbtest.A"
+"unsupported: missing.where.clause.in.DML"
+
+# delete with subquery.
+"delete from sbtest.A where id in (select id from t1)"
+"unsupported: subqueries.in.delete"
+
+# insert with unsupported key type.
+"insert into sbtest.A(b, c, id) values(1,2, 0x12)"
+"hash.unsupported.key.type:[3]"
+
+# insert values num is inconsistent with column num.
+"insert into sbtest.A(b, c, id) values(1,2)"
+"unsupported: shardkey[id].out.of.index:[2]"
+
+# insert without shardkey.
+"insert into sbtest.A(b, c, d) values(1,2, 3)"
+"unsupported: shardkey.column[id].missing"
+
+# insert update shardkey.
+"insert into sbtest.A(b, c, id) values(1,2,3) on duplicate key update id=1"
+"unsupported: cannot.update.shard.key"
+
+# insert with function expression.
+"insert into sbtest.A(b, c, id) values(1, floor(3), floor(3))"
+"unsupported: shardkey[id].type.canot.be[*sqlparser.FuncExpr]"
+
+# insert into select *, hash table.
+"insert into sbtest.A select * from sbtest.B"
+"unsupported: rows.can.not.be.subquery[*sqlparser.Select]"
+
+# insert into select, hash table.
+"insert into sbtest.A(b,c,id) select id,b,c from sbtest.A"
+"unsupported: rows.can.not.be.subquery[*sqlparser.Select]"
+
+# insert into select *, global table.
+"insert into sbtest.G(b, c, id) select * from sbtest.A"
+"unsupported: rows.can.not.be.subquery[*sqlparser.Select]"
+
+# insert into select,global table.
+"insert into sbtest.G select * from sbtest.A"
+"unsupported: rows.can.not.be.subquery[*sqlparser.Select]"
+
+# replace values num is inconsistent with column num.
+"replace into sbtest.A(b, c, id) values(1,2)"
+"unsupported: shardkey[id].out.of.index:[2]"
+
+# replace without shardkey.
+"replace into sbtest.A(b, c, d) values(1,2, 3)"
+"unsupported: shardkey.column[id].missing"
+
+# replace into select *, hash table.
+"replace into sbtest.A select * from sbtest.B"
+"unsupported: rows.can.not.be.subquery[*sqlparser.Select]"
+
+# replace into select, hash table.
+"replace into sbtest.A(b,c,id) select id,b,c from sbtest.A"
+"unsupported: rows.can.not.be.subquery[*sqlparser.Select]"
+
+# replace into select *, global table.
+"replace into sbtest.G(b, c, id) select * from sbtest.A"
+"unsupported: rows.can.not.be.subquery[*sqlparser.Select]"
+
+# replace into select,global table.
+"replace into sbtest.G select * from sbtest.A"
+"unsupported: rows.can.not.be.subquery[*sqlparser.Select]"
+
+# update without where clause.
+"update sbtest.A set a=3"
+"unsupported: missing.where.clause.in.DML"
+
+# update with unsupported key type.
+"update sbtest.A set a=3 where id=0x12"
+"hash.unsupported.key.type:[3]"
+
+# update shard key.
+"update sbtest.A set id=3 where id=1"
+"unsupported: cannot.update.shard.key"
+
+# update with subquery.
+"update sbtest.A set b=3 where id in (select id from t1)"
+"unsupported: subqueries.in.update"
+
+# update with database not found.
+"update sbtest_xxx.A set val = 1 where id = 1"
+"Table 'sbtest_xxx.A' doesn't exist (errno 1146) (sqlstate 42S02)"
+
+# select subquery in where.
+"select * from A as A1 where id in (select id from B)"
+"unsupported: subqueries.in.select"
+
+# select subquery in selectexpr.
+"select A.*,(select b.str from b where A.id=B.id) str from A"
+"unsupported: subqueries.in.select"

@@ -1,0 +1,91 @@
+# checksum without database.
+"Type": "PlanTypeOthers"
+"checksum table A"
+{
+    "RawQuery": "checksum table A",
+    "Partitions": [
+        {
+            "Query": "checksum table sbtest.A1",
+            "Backend": "backend1",
+            "Range": "0-32"
+        },
+        {
+            "Query": "checksum table sbtest.A2",
+            "Backend": "backend2",
+            "Range": "32-64"
+        },
+        {
+            "Query": "checksum table sbtest.A3",
+            "Backend": "backend3",
+            "Range": "64-96"
+        },
+        {
+            "Query": "checksum table sbtest.A4",
+            "Backend": "backend4",
+            "Range": "96-256"
+        },
+        {
+            "Query": "checksum table sbtest.A5",
+            "Backend": "backend5",
+            "Range": "256-512"
+        },
+        {
+            "Query": "checksum table sbtest.A6",
+            "Backend": "backend6",
+            "Range": "512-4096"
+        }
+    ]
+}
+
+# checksum with database.
+"Type": "PlanTypeOthers"
+"checksum table sbtest.A"
+{
+    "RawQuery": "checksum table sbtest.A",
+    "Partitions": [
+        {
+            "Query": "checksum table sbtest.A1",
+            "Backend": "backend1",
+            "Range": "0-32"
+        },
+        {
+            "Query": "checksum table sbtest.A2",
+            "Backend": "backend2",
+            "Range": "32-64"
+        },
+        {
+            "Query": "checksum table sbtest.A3",
+            "Backend": "backend3",
+            "Range": "64-96"
+        },
+        {
+            "Query": "checksum table sbtest.A4",
+            "Backend": "backend4",
+            "Range": "96-256"
+        },
+        {
+            "Query": "checksum table sbtest.A5",
+            "Backend": "backend5",
+            "Range": "256-512"
+        },
+        {
+            "Query": "checksum table sbtest.A6",
+            "Backend": "backend6",
+            "Range": "512-4096"
+        }
+    ]
+}
+
+# checksum global table.
+"Type": "PlanTypeOthers"
+"checksum table G"
+{
+    "RawQuery": "checksum table G",
+    "Partitions": [
+        {
+            "Query": "checksum table G",
+            "Backend": "backend1",
+            "Range": ""
+        }
+    ]
+}

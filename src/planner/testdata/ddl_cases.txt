@@ -1,0 +1,1083 @@
+# create hash table. 
+"Type": "PlanTypeDDL"
+"create table A(a int)"
+{
+    "RawQuery": "create table A(a int)",
+    "Partitions": [
+        {
+            "Query": "create table `sbtest`.`A1`(a int)",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "create table `sbtest`.`A2`(a int)",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "create table `sbtest`.`A3`(a int)",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "create table `sbtest`.`A4`(a int)",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "create table `sbtest`.`A5`(a int)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "create table `sbtest`.`A6`(a int)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# create table with database.
+"Type": "PlanTypeDDL"
+"create table sbtest.A(a int)"
+{
+    "RawQuery": "create table sbtest.A(a int)",
+    "Partitions": [
+        {
+            "Query": "create table `sbtest`.`A1`(a int)",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "create table `sbtest`.`A2`(a int)",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "create table `sbtest`.`A3`(a int)",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "create table `sbtest`.`A4`(a int)",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "create table `sbtest`.`A5`(a int)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "create table `sbtest`.`A6`(a int)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# create global table. 
+"Type": "PlanTypeDDL"
+"create table G(a int)"
+{
+    "RawQuery": "create table G(a int)",
+    "Partitions": [
+        {
+            "Query": "create table `sbtest`.`G`(a int)",
+            "Backend": "backend1",
+            "Range": ""
+        },
+        {
+            "Query": "create table `sbtest`.`G`(a int)",
+            "Backend": "backend2",
+            "Range": ""
+        }
+    ]
+}
+
+# create single table.
+"Type": "PlanTypeDDL"
+"create table S(a int)"
+{
+    "RawQuery": "create table S(a int)",
+    "Partitions": [
+        {
+            "Query": "create table `sbtest`.`S`(a int)",
+            "Backend": "backend1",
+            "Range": ""
+        }
+    ]
+}
+
+# alter table engine.
+"Type": "PlanTypeDDL"
+"alter table A engine = tokudb"
+{
+    "RawQuery": "alter table A engine = tokudb",
+    "Partitions": [
+        {
+            "Query": "alter table `sbtest`.`A1` engine = tokudb",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A2` engine = tokudb",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A3` engine = tokudb",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A4` engine = tokudb",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A5` engine = tokudb",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A6` engine = tokudb",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# create index on hash table.
+"Type": "PlanTypeDDL"
+"create index idx_a on A(a)"
+{
+    "RawQuery": "create index idx_a on A(a)",
+    "Partitions": [
+        {
+            "Query": "create index idx_a on `sbtest`.`A1`(a)",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "create index idx_a on `sbtest`.`A2`(a)",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "create index idx_a on `sbtest`.`A3`(a)",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "create index idx_a on `sbtest`.`A4`(a)",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "create index idx_a on `sbtest`.`A5`(a)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "create index idx_a on `sbtest`.`A6`(a)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# drop index on hash table.
+"Type": "PlanTypeDDL"
+"drop index idx_a on sbtest.A"
+{
+    "RawQuery": "drop index idx_a on sbtest.A",
+    "Partitions": [
+        {
+            "Query": "drop index idx_a on `sbtest`.`A1`",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "drop index idx_a on `sbtest`.`A2`",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "drop index idx_a on `sbtest`.`A3`",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "drop index idx_a on `sbtest`.`A4`",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "drop index idx_a on `sbtest`.`A5`",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "drop index idx_a on `sbtest`.`A6`",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# alter table add column without database.
+"Type": "PlanTypeDDL"
+"alter table A add column(b int)"
+{
+    "RawQuery": "alter table A add column(b int)",
+    "Partitions": [
+        {
+            "Query": "alter table `sbtest`.`A1` add column(b int)",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A2` add column(b int)",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A3` add column(b int)",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A4` add column(b int)",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A5` add column(b int)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A6` add column(b int)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# alter table add column with database.
+"Type": "PlanTypeDDL"
+"alter table sbtest.A add column(b int)"
+{
+    "RawQuery": "alter table sbtest.A add column(b int)",
+    "Partitions": [
+        {
+            "Query": "alter table `sbtest`.`A1` add column(b int)",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A2` add column(b int)",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A3` add column(b int)",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A4` add column(b int)",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A5` add column(b int)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A6` add column(b int)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# alter table add more than one columns.
+"Type": "PlanTypeDDL"
+"alter table sbtest.A add column(b int, c varchar(100))"
+{
+    "RawQuery": "alter table sbtest.A add column(b int, c varchar(100))",
+    "Partitions": [
+        {
+            "Query": "alter table `sbtest`.`A1` add column(b int, c varchar(100))",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A2` add column(b int, c varchar(100))",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A3` add column(b int, c varchar(100))",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A4` add column(b int, c varchar(100))",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A5` add column(b int, c varchar(100))",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A6` add column(b int, c varchar(100))",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# alter table modify column.
+"Type": "PlanTypeDDL"
+"alter table A modify column b int"
+{
+    "RawQuery": "alter table A modify column b int",
+    "Partitions": [
+        {
+            "Query": "alter table `sbtest`.`A1` modify column b int",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A2` modify column b int",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A3` modify column b int",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A4` modify column b int",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A5` modify column b int",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A6` modify column b int",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# alter table drop column.
+"Type": "PlanTypeDDL"
+"alter table A drop column b"
+{
+    "RawQuery": "alter table A drop column b",
+    "Partitions": [
+        {
+            "Query": "alter table `sbtest`.`A1` drop column b",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A2` drop column b",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A3` drop column b",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A4` drop column b",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A5` drop column b",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A6` drop column b",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# truncate table.
+"Type": "PlanTypeDDL"
+"truncate table A"
+{
+    "RawQuery": "truncate table A",
+    "Partitions": [
+        {
+            "Query": "truncate table `sbtest`.`A1`",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "truncate table `sbtest`.`A2`",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "truncate table `sbtest`.`A3`",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "truncate table `sbtest`.`A4`",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "truncate table `sbtest`.`A5`",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "truncate table `sbtest`.`A6`",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# drop table.
+"Type": "PlanTypeDDL"
+"drop table sbtest.A"
+{
+    "RawQuery": "drop table sbtest.A",
+    "Partitions": [
+        {
+            "Query": "drop table `sbtest`.`A1`",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "drop table `sbtest`.`A2`",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "drop table `sbtest`.`A3`",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "drop table `sbtest`.`A4`",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "drop table `sbtest`.`A5`",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "drop table `sbtest`.`A6`",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# ddlplan scatter: create database.
+"Type": "PlanTypeDDL"
+"create database A"
+{
+    "RawQuery": "create database A"
+}
+
+# create index with table name issue#10.
+"Type": "PlanTypeDDL"
+"create index idx_A_id on A(a)"
+{
+    "RawQuery": "create index idx_A_id on A(a)",
+    "Partitions": [
+        {
+            "Query": "create index idx_A_id on `sbtest`.`A1`(a)",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "create index idx_A_id on `sbtest`.`A2`(a)",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "create index idx_A_id on `sbtest`.`A3`(a)",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "create index idx_A_id on `sbtest`.`A4`(a)",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "create index idx_A_id on `sbtest`.`A5`(a)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "create index idx_A_id on `sbtest`.`A6`(a)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# create table, table has quote.
+"Type": "PlanTypeDDL"
+"create table `A`(a int)"
+{
+    "RawQuery": "create table `A`(a int)",
+    "Partitions": [
+        {
+            "Query": "create table `sbtest`.`A1`(a int)",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "create table `sbtest`.`A2`(a int)",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "create table `sbtest`.`A3`(a int)",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "create table `sbtest`.`A4`(a int)",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "create table `sbtest`.`A5`(a int)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "create table `sbtest`.`A6`(a int)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# create table, column has quote.
+"Type": "PlanTypeDDL"
+"create table A(`a` int)"
+{
+    "RawQuery": "create table A(`a` int)",
+    "Partitions": [
+        {
+            "Query": "create table `sbtest`.`A1`(a int)",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "create table `sbtest`.`A2`(a int)",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "create table `sbtest`.`A3`(a int)",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "create table `sbtest`.`A4`(a int)",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "create table `sbtest`.`A5`(a int)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "create table `sbtest`.`A6`(a int)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# create table with database, table has quote.
+"Type": "PlanTypeDDL"
+"create table sbtest.`A`(a int)"
+{
+    "RawQuery": "create table sbtest.`A`(a int)",
+    "Partitions": [
+        {
+            "Query": "create table `sbtest`.`A1`(a int)",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "create table `sbtest`.`A2`(a int)",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "create table `sbtest`.`A3`(a int)",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "create table `sbtest`.`A4`(a int)",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "create table `sbtest`.`A5`(a int)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "create table `sbtest`.`A6`(a int)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# create table with database, database has quote.
+"Type": "PlanTypeDDL"
+"create table `sbtest`.A(a int)"
+{
+    "RawQuery": "create table `sbtest`.A(a int)",
+    "Partitions": [
+        {
+            "Query": "create table `sbtest`.`A1`(a int)",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "create table `sbtest`.`A2`(a int)",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "create table `sbtest`.`A3`(a int)",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "create table `sbtest`.`A4`(a int)",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "create table `sbtest`.`A5`(a int)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "create table `sbtest`.`A6`(a int)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# create table with database, database and table have quote.
+"Type": "PlanTypeDDL"
+"create table `sbtest`.`A`(a int)"
+{
+    "RawQuery": "create table `sbtest`.`A`(a int)",
+    "Partitions": [
+        {
+            "Query": "create table `sbtest`.`A1`(a int)",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "create table `sbtest`.`A2`(a int)",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "create table `sbtest`.`A3`(a int)",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "create table `sbtest`.`A4`(a int)",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "create table `sbtest`.`A5`(a int)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "create table `sbtest`.`A6`(a int)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# create table with same column name.
+"Type": "PlanTypeDDL"
+"CREATE table A(A int)"
+{
+    "RawQuery": "CREATE table A(A int)",
+    "Partitions": [
+        {
+            "Query": "CREATE table `sbtest`.`A1`(A int)",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "CREATE table `sbtest`.`A2`(A int)",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "CREATE table `sbtest`.`A3`(A int)",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "CREATE table `sbtest`.`A4`(A int)",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "CREATE table `sbtest`.`A5`(A int)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "CREATE table `sbtest`.`A6`(A int)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# create table with same column name, table has quote.
+"Type": "PlanTypeDDL"
+"CREATE table `A`(A int)"
+{
+    "RawQuery": "CREATE table `A`(A int)",
+    "Partitions": [
+        {
+            "Query": "CREATE table `sbtest`.`A1`(A int)",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "CREATE table `sbtest`.`A2`(A int)",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "CREATE table `sbtest`.`A3`(A int)",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "CREATE table `sbtest`.`A4`(A int)",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "CREATE table `sbtest`.`A5`(A int)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "CREATE table `sbtest`.`A6`(A int)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# create table with same column name, with database.
+"Type": "PlanTypeDDL"
+"create table sbtest.A(A int)"
+{
+    "RawQuery": "create table sbtest.A(A int)",
+    "Partitions": [
+        {
+            "Query": "create table `sbtest`.`A1`(A int)",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "create table `sbtest`.`A2`(A int)",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "create table `sbtest`.`A3`(A int)",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "create table `sbtest`.`A4`(A int)",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "create table `sbtest`.`A5`(A int)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "create table `sbtest`.`A6`(A int)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# alter table with same column name.
+"Type": "PlanTypeDDL"
+"alter table A add column(A int)"
+{
+    "RawQuery": "alter table A add column(A int)",
+    "Partitions": [
+        {
+            "Query": "alter table `sbtest`.`A1` add column(A int)",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A2` add column(A int)",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A3` add column(A int)",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A4` add column(A int)",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A5` add column(A int)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A6` add column(A int)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# alter table with same column name, with database.
+"Type": "PlanTypeDDL"
+"alter table sbtest.A add column(A int)"
+{
+    "RawQuery": "alter table sbtest.A add column(A int)",
+    "Partitions": [
+        {
+            "Query": "alter table `sbtest`.`A1` add column(A int)",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A2` add column(A int)",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A3` add column(A int)",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A4` add column(A int)",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A5` add column(A int)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "alter table `sbtest`.`A6` add column(A int)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# rename table.
+"Type": "PlanTypeDDL"
+"alter table R rename RR"
+{
+    "RawQuery": "alter table R rename RR",
+    "Partitions": [
+        {
+            "Query": "alter table `sbtest`.`R_0000` rename `sbtest`.`RR_0000`",
+            "Backend": "backend0",
+            "Range": "[0-2)"
+        },
+        {
+            "Query": "alter table `sbtest`.`R_0008` rename `sbtest`.`RR_0008`",
+            "Backend": "backend8",
+            "Range": "[2-4096)"
+        }
+    ]
+}
+
+# rename table with database 1.
+"Type": "PlanTypeDDL"
+"alter table sbtest.R rename sbtest.RR"
+{
+    "RawQuery": "alter table sbtest.R rename sbtest.RR",
+    "Partitions": [
+        {
+            "Query": "alter table `sbtest`.`R_0000` rename `sbtest`.`RR_0000`",
+            "Backend": "backend0",
+            "Range": "[0-2)"
+        },
+        {
+            "Query": "alter table `sbtest`.`R_0008` rename `sbtest`.`RR_0008`",
+            "Backend": "backend8",
+            "Range": "[2-4096)"
+        }
+    ]
+}
+
+# rename table with database 2.
+"Type": "PlanTypeDDL"
+"alter table sbtest.R rename RR"
+{
+    "RawQuery": "alter table sbtest.R rename RR",
+    "Partitions": [
+        {
+            "Query": "alter table `sbtest`.`R_0000` rename `sbtest`.`RR_0000`",
+            "Backend": "backend0",
+            "Range": "[0-2)"
+        },
+        {
+            "Query": "alter table `sbtest`.`R_0008` rename `sbtest`.`RR_0008`",
+            "Backend": "backend8",
+            "Range": "[2-4096)"
+        }
+    ]
+}
+
+# rename table with database 3.
+"Type": "PlanTypeDDL"
+"alter table R rename sbtest.RR"
+{
+    "RawQuery": "alter table R rename sbtest.RR",
+    "Partitions": [
+        {
+            "Query": "alter table `sbtest`.`R_0000` rename `sbtest`.`RR_0000`",
+            "Backend": "backend0",
+            "Range": "[0-2)"
+        },
+        {
+            "Query": "alter table `sbtest`.`R_0008` rename `sbtest`.`RR_0008`",
+            "Backend": "backend8",
+            "Range": "[2-4096)"
+        }
+    ]
+}
+
+# rename table with quote 1.
+"Type": "PlanTypeDDL"
+"alter table `R` rename `sbtest`.`RR`"
+{
+    "RawQuery": "alter table `R` rename `sbtest`.`RR`",
+    "Partitions": [
+        {
+            "Query": "alter table `sbtest`.`R_0000` rename `sbtest`.`RR_0000`",
+            "Backend": "backend0",
+            "Range": "[0-2)"
+        },
+        {
+            "Query": "alter table `sbtest`.`R_0008` rename `sbtest`.`RR_0008`",
+            "Backend": "backend8",
+            "Range": "[2-4096)"
+        }
+    ]
+}
+
+# rename table with quote 2.
+"Type": "PlanTypeDDL"
+"alter table `R` rename `sbtest`.RR"
+{
+    "RawQuery": "alter table `R` rename `sbtest`.RR",
+    "Partitions": [
+        {
+            "Query": "alter table `sbtest`.`R_0000` rename `sbtest`.`RR_0000`",
+            "Backend": "backend0",
+            "Range": "[0-2)"
+        },
+        {
+            "Query": "alter table `sbtest`.`R_0008` rename `sbtest`.`RR_0008`",
+            "Backend": "backend8",
+            "Range": "[2-4096)"
+        }
+    ]
+}
+
+# rename table with quote 3.
+"Type": "PlanTypeDDL"
+"alter table `R` rename sbtest.`RR`"
+{
+    "RawQuery": "alter table `R` rename sbtest.`RR`",
+    "Partitions": [
+        {
+            "Query": "alter table `sbtest`.`R_0000` rename `sbtest`.`RR_0000`",
+            "Backend": "backend0",
+            "Range": "[0-2)"
+        },
+        {
+            "Query": "alter table `sbtest`.`R_0008` rename `sbtest`.`RR_0008`",
+            "Backend": "backend8",
+            "Range": "[2-4096)"
+        }
+    ]
+}
+
+# rename single table. 
+"Type": "PlanTypeDDL"
+"alter table S rename S_S"
+{
+    "RawQuery": "alter table S rename S_S",
+    "Partitions": [
+        {
+            "Query": "alter table `sbtest`.`S` rename `sbtest`.`S_S`",
+            "Backend": "backend1",
+            "Range": ""
+        }
+    ]
+}

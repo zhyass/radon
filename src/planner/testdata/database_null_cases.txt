@@ -1,0 +1,35 @@
+# delete without database.
+"create table A(a int)"
+"No database selected (errno 1046) (sqlstate 3D000)"
+
+# delete without database.
+"delete from A where id=1"
+"No database selected (errno 1046) (sqlstate 3D000)"
+
+# insert without database, hash table.
+"insert into A(b, c, id) values(1, 2, 3)"
+"No database selected (errno 1046) (sqlstate 3D000)"
+
+# insert without database, global table.
+"insert into G(b, c, id) values(1, 2, 3)"
+"No database selected (errno 1046) (sqlstate 3D000)"
+
+# checksum without database.
+"checksum table A"
+"No database selected (errno 1046) (sqlstate 3D000)"
+
+# update without database.
+"update A set b = 1 where id = 2"
+"No database selected (errno 1046) (sqlstate 3D000)"
+
+# update without where clause.
+"update A set b=3"
+"unsupported: missing.where.clause.in.DML"
+
+# update has subquery.
+"update A set b=3 where id in (select id from t1)"
+"unsupported: subqueries.in.update"
+
+# update shard key.
+"update sbtest.A set id = 1 where id = 2"
+"unsupported: cannot.update.shard.key"

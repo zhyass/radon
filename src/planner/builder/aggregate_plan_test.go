@@ -26,99 +26,67 @@ func TestAggregatePlan(t *testing.T) {
 	"Aggrs": [
 		{
 			"Field": "min(b)",
-			"Index": 2,
-			"Type": "MIN",
-			"Distinct": false
+			"Type": "MIN"
 		},
 		{
 			"Field": "max(a)",
-			"Index": 3,
-			"Type": "MAX",
-			"Distinct": false
+			"Type": "MAX"
 		},
 		{
 			"Field": "avg(a)",
-			"Index": 4,
-			"Type": "AVG",
-			"Distinct": false
+			"Type": "AVG"
 		},
 		{
 			"Field": "sum(a)",
-			"Index": 4,
-			"Type": "SUM",
-			"Distinct": false
+			"Type": "SUM"
 		},
 		{
 			"Field": "count(a)",
-			"Index": 5,
-			"Type": "COUNT",
-			"Distinct": false
+			"Type": "COUNT"
 		},
 		{
 			"Field": "sum(a)",
-			"Index": 6,
-			"Type": "SUM",
-			"Distinct": false
+			"Type": "SUM"
 		},
 		{
 			"Field": "count(a)",
-			"Index": 7,
-			"Type": "COUNT",
-			"Distinct": false
+			"Type": "COUNT"
 		},
 		{
 			"Field": "avg(b)",
-			"Index": 9,
-			"Type": "AVG",
-			"Distinct": false
+			"Type": "AVG"
 		},
 		{
 			"Field": "sum(b)",
-			"Index": 9,
-			"Type": "SUM",
-			"Distinct": false
+			"Type": "SUM"
 		},
 		{
 			"Field": "count(b)",
-			"Index": 10,
-			"Type": "COUNT",
-			"Distinct": false
+			"Type": "COUNT"
 		},
 		{
 			"Field": "avg(c)",
-			"Index": 12,
-			"Type": "AVG",
-			"Distinct": false
+			"Type": "AVG"
 		},
 		{
 			"Field": "sum(c)",
-			"Index": 12,
-			"Type": "SUM",
-			"Distinct": false
+			"Type": "SUM"
 		},
 		{
 			"Field": "count(c)",
-			"Index": 13,
-			"Type": "COUNT",
-			"Distinct": false
+			"Type": "COUNT"
 		},
 		{
 			"Field": "a",
-			"Index": 1,
-			"Type": "GROUP BY",
-			"Distinct": false
+			"Type": "GROUP BY"
 		},
 		{
 			"Field": "b",
-			"Index": 8,
-			"Type": "GROUP BY",
-			"Distinct": false
+			"Type": "GROUP BY"
 		},
 		{
 			"Field": "c",
-			"Index": 11,
-			"Type": "GROUP BY",
-			"Distinct": false
+			"Type": "GROUP BY"
 		}
 	],
 	"ReWritten": "1, a, min(b), max(a), sum(a) as ` + "`avg(a)`" + `, count(a), sum(a), count(a), b as b1, sum(b) as ` + "`avg(b)`" + `, count(b), c, sum(c) as ` + "`avg(c)`" + `, count(c)"
@@ -171,99 +139,67 @@ func TestAggregatePlanUpperCase(t *testing.T) {
 	"Aggrs": [
 		{
 			"Field": "MIN(b)",
-			"Index": 2,
-			"Type": "MIN",
-			"Distinct": false
+			"Type": "MIN"
 		},
 		{
 			"Field": "MAX(a)",
-			"Index": 3,
-			"Type": "MAX",
-			"Distinct": false
+			"Type": "MAX"
 		},
 		{
 			"Field": "AVG(a)",
-			"Index": 4,
-			"Type": "AVG",
-			"Distinct": false
+			"Type": "AVG"
 		},
 		{
 			"Field": "sum(a)",
-			"Index": 4,
-			"Type": "SUM",
-			"Distinct": false
+			"Type": "SUM"
 		},
 		{
 			"Field": "count(a)",
-			"Index": 5,
-			"Type": "COUNT",
-			"Distinct": false
+			"Type": "COUNT"
 		},
 		{
 			"Field": "SUM(a)",
-			"Index": 6,
-			"Type": "SUM",
-			"Distinct": false
+			"Type": "SUM"
 		},
 		{
 			"Field": "COUNT(a)",
-			"Index": 7,
-			"Type": "COUNT",
-			"Distinct": false
+			"Type": "COUNT"
 		},
 		{
 			"Field": "AVG(b)",
-			"Index": 9,
-			"Type": "AVG",
-			"Distinct": false
+			"Type": "AVG"
 		},
 		{
 			"Field": "sum(b)",
-			"Index": 9,
-			"Type": "SUM",
-			"Distinct": false
+			"Type": "SUM"
 		},
 		{
 			"Field": "count(b)",
-			"Index": 10,
-			"Type": "COUNT",
-			"Distinct": false
+			"Type": "COUNT"
 		},
 		{
 			"Field": "AVG(c)",
-			"Index": 12,
-			"Type": "AVG",
-			"Distinct": false
+			"Type": "AVG"
 		},
 		{
 			"Field": "sum(c)",
-			"Index": 12,
-			"Type": "SUM",
-			"Distinct": false
+			"Type": "SUM"
 		},
 		{
 			"Field": "count(c)",
-			"Index": 13,
-			"Type": "COUNT",
-			"Distinct": false
+			"Type": "COUNT"
 		},
 		{
 			"Field": "a",
-			"Index": 1,
-			"Type": "GROUP BY",
-			"Distinct": false
+			"Type": "GROUP BY"
 		},
 		{
 			"Field": "b",
-			"Index": 8,
-			"Type": "GROUP BY",
-			"Distinct": false
+			"Type": "GROUP BY"
 		},
 		{
 			"Field": "c",
-			"Index": 11,
-			"Type": "GROUP BY",
-			"Distinct": false
+			"Type": "GROUP BY"
 		}
 	],
 	"ReWritten": "1, a, MIN(b), MAX(a), sum(a) as ` + "`AVG(a)`" + `, count(a), SUM(a), COUNT(a), b as b1, sum(b) as ` + "`AVG(b)`" + `, count(b), c, sum(c) as ` + "`AVG(c)`" + `, count(c)"
@@ -314,15 +250,11 @@ func TestAggregatePlanHaving(t *testing.T) {
 	"Aggrs": [
 		{
 			"Field": "count(*)",
-			"Index": 1,
-			"Type": "COUNT",
-			"Distinct": false
+			"Type": "COUNT"
 		},
 		{
 			"Field": "age",
-			"Index": 0,
-			"Type": "GROUP BY",
-			"Distinct": false
+			"Type": "GROUP BY"
 		}
 	],
 	"ReWritten": "age, count(*)"
@@ -412,39 +344,27 @@ func TestAggregatePlans(t *testing.T) {
 	"Aggrs": [
 		{
 			"Field": "avg(a)",
-			"Index": 0,
-			"Type": "AVG",
-			"Distinct": false
+			"Type": "AVG"
 		},
 		{
 			"Field": "sum(a)",
-			"Index": 0,
-			"Type": "SUM",
-			"Distinct": false
+			"Type": "SUM"
 		},
 		{
 			"Field": "count(a)",
-			"Index": 1,
-			"Type": "COUNT",
-			"Distinct": false
+			"Type": "COUNT"
 		},
 		{
 			"Field": "avg(c * 100)",
-			"Index": 2,
-			"Type": "AVG",
-			"Distinct": false
+			"Type": "AVG"
 		},
 		{
 			"Field": "sum(c * 100)",
-			"Index": 2,
-			"Type": "SUM",
-			"Distinct": false
+			"Type": "SUM"
 		},
 		{
 			"Field": "count(c * 100)",
-			"Index": 3,
-			"Type": "COUNT",
-			"Distinct": false
+			"Type": "COUNT"
 		}
 	],
 	"ReWritten": "sum(a) as b1, count(a), sum(c * 100) as ` + "`avg(c * 100)`" + `, count(c * 100)"
@@ -453,15 +373,12 @@ func TestAggregatePlans(t *testing.T) {
 	"Aggrs": [
 		{
 			"Field": "avg(distinct b)",
-			"Index": 0,
 			"Type": "AVG",
 			"Distinct": true
 		},
 		{
 			"Field": "count(*)",
-			"Index": 1,
-			"Type": "COUNT",
-			"Distinct": false
+			"Type": "COUNT"
 		}
 	],
 	"ReWritten": "b as ` + "`avg(distinct b)`" + `, 1 as ` + "`count(*)`" + `"

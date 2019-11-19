@@ -1,0 +1,111 @@
+# select without database.
+"select 1, sum(a),avg(a),a,b from sbtest.A where id > 1 group by a,b order by a desc limit 10 offset 100"
+{
+    "Project": "1, sum(a), avg(a), a, b",
+    "Query": "select 1, sum(a), sum(a) as `avg(a)`, count(a), a, b from sbtest.? as A where id \u003e 1 group by a, b order by a desc",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[A1]"
+        },
+        {
+            "Backend": "backend2",
+            "Tables": "[A2]"
+        },
+        {
+            "Backend": "backend3",
+            "Tables": "[A3]"
+        },
+        {
+            "Backend": "backend4",
+            "Tables": "[A4]"
+        },
+        {
+            "Backend": "backend5",
+            "Tables": "[A5]"
+        },
+        {
+            "Backend": "backend6",
+            "Tables": "[A6]"
+        }
+    ],
+    "Aggregate": [
+        {
+            "Field": "sum(a)",
+            "Type": "SUM"
+        },
+        {
+            "Field": "avg(a)",
+            "Type": "AVG"
+        },
+        {
+            "Field": "sum(a)",
+            "Type": "SUM"
+        },
+        {
+            "Field": "count(a)",
+            "Type": "COUNT"
+        },
+        {
+            "Field": "a",
+            "Type": "GROUP BY"
+        },
+        {
+            "Field": "b",
+            "Type": "GROUP BY"
+        }
+    ],
+    "GatherMerge": [
+        {
+            "Field": "a",
+            "Direction": "DESC"
+        }
+    ],
+    "Limit": {
+        "Offset": 100,
+        "Limit": 10
+    }
+}
+
+# select without database.
+"select id, sum(a) as A from sbtest.A group by id having id>1000"
+{
+    "Project": "id, A",
+    "Query": "select id, sum(a) as A from sbtest.? as A group by id having id \u003e 1000 order by id asc",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[A1]"
+        },
+        {
+            "Backend": "backend2",
+            "Tables": "[A2]"
+        },
+        {
+            "Backend": "backend3",
+            "Tables": "[A3]"
+        },
+        {
+            "Backend": "backend4",
+            "Tables": "[A4]"
+        },
+        {
+            "Backend": "backend5",
+            "Tables": "[A5]"
+        },
+        {
+            "Backend": "backend6",
+            "Tables": "[A6]"
+        }
+    ],
+    "GatherMerge": [
+        {
+            "Field": "id",
+            "Direction": "ASC"
+        }
+    ]
+}
+
+# database not found.
+"select * from A as A1 where id = 10"
+"No database selected (errno 1046) (sqlstate 3D000)"

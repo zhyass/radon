@@ -1,0 +1,572 @@
+# insert on duplicate key update.
+"Type": "PlanTypeInsert"
+"insert into A(id, b, c) values(1,2,3) on duplicate key update c=11"
+{
+    "RawQuery": "insert into A(id, b, c) values(1,2,3) on duplicate key update c=11",
+    "Partitions": [
+        {
+            "Query": "insert into sbtest.A6(id, b, c) values (1, 2, 3) on duplicate key update c = 11",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# insert multiple.
+"Type": "PlanTypeInsert"
+"insert into A(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)"
+{
+    "RawQuery": "insert into A(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)",
+    "Partitions": [
+        {
+            "Query": "insert into sbtest.A5(id, b, c) values (65536, 3, 4)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "insert into sbtest.A6(id, b, c) values (1, 2, 3), (23, 4, 5)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# insert multiple, with database.
+"Type": "PlanTypeInsert"
+"insert into sbtest.A(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)"
+{
+    "RawQuery": "insert into sbtest.A(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)",
+    "Partitions": [
+        {
+            "Query": "insert into sbtest.A5(id, b, c) values (65536, 3, 4)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "insert into sbtest.A6(id, b, c) values (1, 2, 3), (23, 4, 5)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# insert on duplicate key update, global table.
+"Type": "PlanTypeInsert"
+"insert into G(id, b, c) values(1,2,3) on duplicate key update c=11"
+{
+    "RawQuery": "insert into G(id, b, c) values(1,2,3) on duplicate key update c=11",
+    "Partitions": [
+        {
+            "Query": "insert into sbtest.G(id, b, c) values (1, 2, 3) on duplicate key update c = 11",
+            "Backend": "backend1",
+            "Range": ""
+        },
+        {
+            "Query": "insert into sbtest.G(id, b, c) values (1, 2, 3) on duplicate key update c = 11",
+            "Backend": "backend2",
+            "Range": ""
+        }
+    ]
+}
+
+# insert multiple, global table.
+"Type": "PlanTypeInsert"
+"insert into G(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)"
+{
+    "RawQuery": "insert into G(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)",
+    "Partitions": [
+        {
+            "Query": "insert into sbtest.G(id, b, c) values (1, 2, 3), (23, 4, 5), (65536, 3, 4)",
+            "Backend": "backend1",
+            "Range": ""
+        },
+        {
+            "Query": "insert into sbtest.G(id, b, c) values (1, 2, 3), (23, 4, 5), (65536, 3, 4)",
+            "Backend": "backend2",
+            "Range": ""
+        }
+    ]
+}
+
+# insert multiple with database, global table.
+"Type": "PlanTypeInsert"
+"insert into sbtest.G(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)"
+{
+    "RawQuery": "insert into sbtest.G(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)",
+    "Partitions": [
+        {
+            "Query": "insert into sbtest.G(id, b, c) values (1, 2, 3), (23, 4, 5), (65536, 3, 4)",
+            "Backend": "backend1",
+            "Range": ""
+        },
+        {
+            "Query": "insert into sbtest.G(id, b, c) values (1, 2, 3), (23, 4, 5), (65536, 3, 4)",
+            "Backend": "backend2",
+            "Range": ""
+        }
+    ]
+}
+
+# insert on duplicate key update, single table.
+"Type": "PlanTypeInsert"
+"insert into S(id, b, c) values(1,2,3) on duplicate key update c=11"
+{
+    "RawQuery": "insert into S(id, b, c) values(1,2,3) on duplicate key update c=11",
+    "Partitions": [
+        {
+            "Query": "insert into sbtest.S(id, b, c) values (1, 2, 3) on duplicate key update c = 11",
+            "Backend": "backend1",
+            "Range": ""
+        }
+    ]
+}
+
+# insert multiple, single table.
+"Type": "PlanTypeInsert"
+"insert into S(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)"
+{
+    "RawQuery": "insert into S(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)",
+    "Partitions": [
+        {
+            "Query": "insert into sbtest.S(id, b, c) values (1, 2, 3), (23, 4, 5), (65536, 3, 4)",
+            "Backend": "backend1",
+            "Range": ""
+        }
+    ]
+}
+
+# insert multiple with database, single table.
+"Type": "PlanTypeInsert"
+"insert into sbtest.S(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)"
+{
+    "RawQuery": "insert into sbtest.S(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)",
+    "Partitions": [
+        {
+            "Query": "insert into sbtest.S(id, b, c) values (1, 2, 3), (23, 4, 5), (65536, 3, 4)",
+            "Backend": "backend1",
+            "Range": ""
+        }
+    ]
+}
+
+# replace multiple.
+"Type": "PlanTypeInsert"
+"replace into A(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)"
+{
+    "RawQuery": "replace into A(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)",
+    "Partitions": [
+        {
+            "Query": "replace into sbtest.A5(id, b, c) values (65536, 3, 4)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "replace into sbtest.A6(id, b, c) values (1, 2, 3), (23, 4, 5)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+#replace multiple, with database.
+"Type": "PlanTypeInsert"
+"replace into sbtest.A(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)"
+{
+    "RawQuery": "replace into sbtest.A(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)",
+    "Partitions": [
+        {
+            "Query": "replace into sbtest.A5(id, b, c) values (65536, 3, 4)",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "replace into sbtest.A6(id, b, c) values (1, 2, 3), (23, 4, 5)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# replace on duplicate key update, global table.
+"Type": "PlanTypeInsert"
+"replace into G(id, b, c) values(1,2,3) on duplicate key update c=11"
+{
+    "RawQuery": "replace into G(id, b, c) values(1,2,3) on duplicate key update c=11",
+    "Partitions": [
+        {
+            "Query": "replace into sbtest.G(id, b, c) values (1, 2, 3) on duplicate key update c = 11",
+            "Backend": "backend1",
+            "Range": ""
+        },
+        {
+            "Query": "replace into sbtest.G(id, b, c) values (1, 2, 3) on duplicate key update c = 11",
+            "Backend": "backend2",
+            "Range": ""
+        }
+    ]
+}
+
+# replace multiple, global database.
+"Type": "PlanTypeInsert"
+"replace into G(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)"
+{
+    "RawQuery": "replace into G(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)",
+    "Partitions": [
+        {
+            "Query": "replace into sbtest.G(id, b, c) values (1, 2, 3), (23, 4, 5), (65536, 3, 4)",
+            "Backend": "backend1",
+            "Range": ""
+        },
+        {
+            "Query": "replace into sbtest.G(id, b, c) values (1, 2, 3), (23, 4, 5), (65536, 3, 4)",
+            "Backend": "backend2",
+            "Range": ""
+        }
+    ]
+}
+
+# replace multiple with database, global database.
+"Type": "PlanTypeInsert"
+"replace into sbtest.G(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)"
+{
+    "RawQuery": "replace into sbtest.G(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)",
+    "Partitions": [
+        {
+            "Query": "replace into sbtest.G(id, b, c) values (1, 2, 3), (23, 4, 5), (65536, 3, 4)",
+            "Backend": "backend1",
+            "Range": ""
+        },
+        {
+            "Query": "replace into sbtest.G(id, b, c) values (1, 2, 3), (23, 4, 5), (65536, 3, 4)",
+            "Backend": "backend2",
+            "Range": ""
+        }
+    ]
+}
+
+# replace on duplicate key update, single table.
+"Type": "PlanTypeInsert"
+"replace into S(id, b, c) values(1,2,3) on duplicate key update c=11"
+{
+    "RawQuery": "replace into S(id, b, c) values(1,2,3) on duplicate key update c=11",
+    "Partitions": [
+        {
+            "Query": "replace into sbtest.S(id, b, c) values (1, 2, 3) on duplicate key update c = 11",
+            "Backend": "backend1",
+            "Range": ""
+        }
+    ]
+}
+
+# replace multiple, single table.
+"Type": "PlanTypeInsert"
+"replace into S(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)"
+{
+    "RawQuery": "replace into S(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)",
+    "Partitions": [
+        {
+            "Query": "replace into sbtest.S(id, b, c) values (1, 2, 3), (23, 4, 5), (65536, 3, 4)",
+            "Backend": "backend1",
+            "Range": ""
+        }
+    ]
+}
+
+# replace multiple with database, single table.
+"Type": "PlanTypeInsert"
+"replace into sbtest.S(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)"
+{
+    "RawQuery": "replace into sbtest.S(id, b, c) values(1,2,3),(23,4,5), (65536,3,4)",
+    "Partitions": [
+        {
+            "Query": "replace into sbtest.S(id, b, c) values (1, 2, 3), (23, 4, 5), (65536, 3, 4)",
+            "Backend": "backend1",
+            "Range": ""
+        }
+    ]
+}
+
+# delete with shard key filter.
+"Type": "PlanTypeDelete"
+"delete from sbtest.A where id=1"
+{
+    "RawQuery": "delete from sbtest.A where id=1",
+    "Partitions": [
+        {
+            "Query": "delete from sbtest.A6 where id = 1",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# delete with order by.
+"Type": "PlanTypeDelete"
+"delete from sbtest.A where id=1 order by xx"
+{
+    "RawQuery": "delete from sbtest.A where id=1 order by xx",
+    "Partitions": [
+        {
+            "Query": "delete from sbtest.A6 where id = 1 order by xx asc",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# delete with or filter.
+"Type": "PlanTypeDelete"
+"delete from A where id = 1 or id = 0"
+{
+    "RawQuery": "delete from A where id = 1 or id = 0",
+    "Partitions": [
+        {
+            "Query": "delete from sbtest.A6 where id = 1 or id = 0",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        },
+        {
+            "Query": "delete from sbtest.A1 where id = 1 or id = 0",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        }
+    ]
+}
+
+# delete with filter.
+"Type": "PlanTypeDelete"
+"delete from sbtest.A where name='xx'"
+{
+    "RawQuery": "delete from sbtest.A where name='xx'",
+    "Partitions": [
+        {
+            "Query": "delete from sbtest.A1 where name = 'xx'",
+            "Backend": "backend1",
+            "Range": "[0-32)"
+        },
+        {
+            "Query": "delete from sbtest.A2 where name = 'xx'",
+            "Backend": "backend2",
+            "Range": "[32-64)"
+        },
+        {
+            "Query": "delete from sbtest.A3 where name = 'xx'",
+            "Backend": "backend3",
+            "Range": "[64-96)"
+        },
+        {
+            "Query": "delete from sbtest.A4 where name = 'xx'",
+            "Backend": "backend4",
+            "Range": "[96-256)"
+        },
+        {
+            "Query": "delete from sbtest.A5 where name = 'xx'",
+            "Backend": "backend5",
+            "Range": "[256-512)"
+        },
+        {
+            "Query": "delete from sbtest.A6 where name = 'xx'",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# delete hash filter.
+"Type": "PlanTypeDelete"
+"delete from sbtest.A where id in (1, 2,3)"
+{
+    "RawQuery": "delete from sbtest.A where id in (1, 2,3)",
+    "Partitions": [
+        {
+            "Query": "delete from sbtest.A6 where id in (1, 2, 3)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# delete global table.
+"Type": "PlanTypeDelete"
+"delete from sbtest.G where id in (1, 2,3)"
+{
+    "RawQuery": "delete from sbtest.G where id in (1, 2,3)",
+    "Partitions": [
+        {
+            "Query": "delete from sbtest.G where id in (1, 2, 3)",
+            "Backend": "backend1",
+            "Range": ""
+        },
+        {
+            "Query": "delete from sbtest.G where id in (1, 2, 3)",
+            "Backend": "backend2",
+            "Range": ""
+        }
+    ]
+}
+
+# delete single table.
+"Type": "PlanTypeDelete"
+"delete from sbtest.S where id in (1, 2,3)"
+{
+    "RawQuery": "delete from sbtest.S where id in (1, 2,3)",
+    "Partitions": [
+        {
+            "Query": "delete from sbtest.S where id in (1, 2, 3)",
+            "Backend": "backend1",
+            "Range": ""
+        }
+    ]
+}
+
+# update with filter.
+"Type": "PlanTypeUpdate"
+"update sbtest.A set val = 1 where id = 1"
+{
+    "RawQuery": "update sbtest.A set val = 1 where id = 1",
+    "Partitions": [
+        {
+            "Query": "update sbtest.A6 set val = 1 where id = 1",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# update with multiple filters.
+"Type": "PlanTypeUpdate"
+"update sbtest.A set val = 1 where id = 2 and id = 1"
+{
+    "RawQuery": "update sbtest.A set val = 1 where id = 2 and id = 1",
+    "Partitions": [
+        {
+            "Query": "update sbtest.A6 set val = 1 where id = 2 and id = 1",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# update with in filter.
+"Type": "PlanTypeUpdate"
+"update sbtest.A set val = 1 where id in (1, 2)"
+{
+    "RawQuery": "update sbtest.A set val = 1 where id in (1, 2)",
+    "Partitions": [
+        {
+            "Query": "update sbtest.A6 set val = 1 where id in (1, 2)",
+            "Backend": "backend6",
+            "Range": "[512-4096)"
+        }
+    ]
+}
+
+# select test case, others in builder/testdata/select_cases.txt.
+"Type": "PlanTypeSelect"
+"select 1, sum(a),avg(a),a,b from sbtest.A where id>1 group by a,b order by A.a desc limit 10 offset 100"
+{
+    "Project": "1, sum(a), avg(a), a, b",
+    "Query": "select 1, sum(a), sum(a) as `avg(a)`, count(a), a, b from sbtest.? as A where id \u003e 1 group by a, b order by A.a desc",
+    "Partitions": [
+        {
+            "Backend": "backend1",
+            "Tables": "[A1]"
+        },
+        {
+            "Backend": "backend2",
+            "Tables": "[A2]"
+        },
+        {
+            "Backend": "backend3",
+            "Tables": "[A3]"
+        },
+        {
+            "Backend": "backend4",
+            "Tables": "[A4]"
+        },
+        {
+            "Backend": "backend5",
+            "Tables": "[A5]"
+        },
+        {
+            "Backend": "backend6",
+            "Tables": "[A6]"
+        }
+    ],
+    "Aggregate": [
+        {
+            "Field": "sum(a)",
+            "Type": "SUM"
+        },
+        {
+            "Field": "avg(a)",
+            "Type": "AVG"
+        },
+        {
+            "Field": "sum(a)",
+            "Type": "SUM"
+        },
+        {
+            "Field": "count(a)",
+            "Type": "COUNT"
+        },
+        {
+            "Field": "a",
+            "Type": "GROUP BY"
+        },
+        {
+            "Field": "b",
+            "Type": "GROUP BY"
+        }
+    ],
+    "GatherMerge": [
+        {
+            "Field": "a",
+            "Table": "A",
+            "Direction": "DESC"
+        }
+    ],
+    "Limit": {
+        "Offset": 100,
+        "Limit": 10
+    }
+}
+
+# union testcases, others in builder/testdata/union_cases.txt.
+"Type": "PlanTypeUnion"
+"select a as tmp,b from B union distinct (select a,b from S union select 1,'a') order by a limit 10"
+{
+    "Project": "tmp, b",
+    "Union": "union distinct",
+    "Left": {
+        "Query": "select a as tmp, b from sbtest.? as B",
+        "Partitions": [
+            {
+                "Backend": "backend1",
+                "Tables": "[B0]"
+            },
+            {
+                "Backend": "backend2",
+                "Tables": "[B1]"
+            }
+        ]
+    },
+    "Right": {
+        "Query": "select a, b from sbtest.S union select 1, 'a' from dual",
+        "Partitions": [
+            {
+                "Backend": "backend1"
+            }
+        ]
+    },
+    "GatherMerge": [
+        {
+            "Field": "tmp",
+            "Direction": "ASC"
+        }
+    ],
+    "Limit": {
+        "Offset": 0,
+        "Limit": 10
+    }
+}

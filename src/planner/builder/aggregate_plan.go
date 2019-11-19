@@ -26,9 +26,9 @@ var (
 // Aggregator tuple.
 type Aggregator struct {
 	Field    string
-	Index    int
+	Index    int `json:"-"`
 	Type     sqltypes.AggrType
-	Distinct bool
+	Distinct bool `json:",omitempty"`
 }
 
 // AggregatePlan represents order-by plan.

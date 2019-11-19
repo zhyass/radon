@@ -9,14 +9,10 @@
 package planner
 
 import (
-	"encoding/json"
-
 	"planner/builder"
 	"router"
-	"xcontext"
 
 	"github.com/xelabs/go-mysqlstack/sqlparser"
-	"github.com/xelabs/go-mysqlstack/sqlparser/depends/common"
 	"github.com/xelabs/go-mysqlstack/xlog"
 )
 
@@ -72,54 +68,7 @@ func (p *UnionPlan) Type() PlanType {
 
 // JSON returns the plan info.
 func (p *UnionPlan) JSON() string {
-	type limit struct {
-		Offset int
-		Limit  int
-	}
-
-	type explain struct {
-		RawQuery    string                `json:",omitempty"`
-		Project     string                `json:",omitempty"`
-		Partitions  []xcontext.QueryTuple `json:",omitempty"`
-		UnionType   *string               `json:",omitempty"`
-		GatherMerge []string              `json:",omitempty"`
-		Limit       *limit                `json:",omitempty"`
-	}
-
-	// Union.
-	var uni *string
-	if u, ok := p.Root.(*builder.UnionNode); ok {
-		uni = &u.Typ
-	}
-
-	var gatherMerge []string
-	var lim *limit
-	for _, sub := range p.Root.Children() {
-		switch sub.Type() {
-		case builder.ChildTypeOrderby:
-			plan := sub.(*builder.OrderByPlan)
-			for _, order := range plan.OrderBys {
-				field := order.Field
-				gatherMerge = append(gatherMerge, field)
-			}
-		case builder.ChildTypeLimit:
-			plan := sub.(*builder.LimitPlan)
-			lim = &limit{Offset: plan.Offset, Limit: plan.Limit}
-		}
-	}
-
-	exp := &explain{Project: builder.GetProject(p.Root),
-		RawQuery:    p.RawQuery,
-		Partitions:  p.Root.GetQuery(),
-		UnionType:   uni,
-		GatherMerge: gatherMerge,
-		Limit:       lim,
-	}
-	bout, err := json.MarshalIndent(exp, "", "\t")
-	if err != nil {
-		return err.Error()
-	}
-	return common.BytesToString(bout)
+	return builder.JSON(p.Root)
 }
 
 // Size returns the memory size.
