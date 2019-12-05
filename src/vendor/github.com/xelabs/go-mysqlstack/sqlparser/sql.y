@@ -1407,6 +1407,10 @@ show_statement:
   {
     $$ = &Show{Type: ShowColumnsStr, Table: $4}
   }
+| DESC table_name force_eof
+  {
+    $$ = &Show{Type: ShowColumnsStr, Table: $2}
+  }
 | SHOW CREATE TABLE table_name force_eof
   {
     $$ = &Show{Type: ShowCreateTableStr, Table: $4}
