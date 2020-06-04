@@ -129,7 +129,6 @@ const (
 	TableOptionComment
 	TableOptionEngine
 	TableOptionCharset
-	TableOptionTableType
 	TableOptionAutoInc
 	TableOptionAvgRowLength
 	TableOptionChecksum
@@ -160,7 +159,6 @@ func (tblOptList *TableOptionListOpt) CheckIfTableOptDuplicate() string {
 		TableOptionComment:          false,
 		TableOptionEngine:           false,
 		TableOptionCharset:          false,
-		TableOptionTableType:        false,
 		TableOptionAutoInc:          false,
 		TableOptionAvgRowLength:     false,
 		TableOptionChecksum:         false,
@@ -199,11 +197,6 @@ func (tblOptList *TableOptionListOpt) CheckIfTableOptDuplicate() string {
 				return "Duplicate table option for keyword 'charset', the option should only be appeared just one time in RadonDB."
 			}
 			optOnce[TableOptionCharset] = true
-		case TableOptionTableType:
-			if optOnce[TableOptionTableType] {
-				return "Duplicate table option for keyword 'single or global', the option should only be appeared just one time in RadonDB."
-			}
-			optOnce[TableOptionTableType] = true
 		case TableOptionAutoInc:
 			if optOnce[TableOptionAutoInc] {
 				return "Duplicate table option for keyword 'auto_increment', the option should only be appeared just one time in RadonDB."
@@ -329,8 +322,52 @@ type PartitionDefinition struct {
 	Row     ValTuple
 }
 
-// PartitionOptions specifies the partition options.
-type PartitionOptions []*PartitionDefinition
+// PartitionDefinitions specifies the partition options.
+type PartitionDefinitions []*PartitionDefinition
+
+type (
+	PartitionOption interface {
+		PartitionType() string
+	}
+
+	PartOptGlobal struct{}
+
+	PartOptSingle struct {
+		BackendName string
+	}
+
+	PartOptNormal struct{}
+
+	PartOptList struct {
+		Name     string
+		PartDefs PartitionDefinitions
+	}
+
+	PartOptHash struct {
+		Name         string
+		PartitionNum *SQLVal
+	}
+)
+
+func (*PartOptGlobal) PartitionType() string {
+	return GlobalTableType
+}
+
+func (*PartOptSingle) PartitionType() string {
+	return SingleTableType
+}
+
+func (*PartOptNormal) PartitionType() string {
+	return NormalTableType
+}
+
+func (*PartOptList) PartitionType() string {
+	return PartitionTableList
+}
+
+func (*PartOptHash) PartitionType() string {
+	return PartitionTableHash
+}
 
 // TableOption represents the table options.
 // See https://dev.mysql.com/doc/refman/5.7/en/create-table.html
